@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/700.css";
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+
+@theme {
+  /* ── Colors ── */
+  --color-void: #0a0a0a;
+  --color-char: #1d1d1d;
+  --color-iron: #3d3d3d;
+  --color-slate: #505050;
+  --color-smoke: #797979;
+  --color-graphite: #161616;
+  --color-ink: #282828;
+  --color-fog: #686868;
+  --color-mist: #c2c2c2;
+  --color-ash: #b2b2b2;
+  --color-bone: #e5e5e5;
+  --color-paper: #ffffff;
+  --color-onyx: #000000;
+  --color-indigo: #6b62f2;
+
+  /* Semantic — success/danger for balance screen */
+  --color-success: #4ade80;
+  --color-danger: #f87171;
+
+  /* ── Fonts ── */
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-geist: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* ── Type scale ── */
+  --text-caption: 14px;
+  --text-body: 16px;
+  --text-body-lg: 18px;
+  --text-subheading: 24px;
+  --text-heading-sm: 32px;
+  --text-heading: 40px;
+  --text-heading-lg: 48px;
+
+  /* ── Spacing ── */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-44: 44px;
+  --spacing-48: 48px;
+  --spacing-56: 56px;
+  --spacing-64: 64px;
+
+  /* ── Border radius ── */
+  --radius-input: 10px;
+  --radius-card: 24px;
+  --radius-container: 40px;
+  --radius-pill: 9999px;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  background-color: var(--color-void);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe-area insets for notched phones */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(29, 29, 29, 0.80);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(229, 229, 229, 0.08);
+}
+
+/* Amount display — Geist for tabular figures */
+.amount {
+  font-family: var(--font-geist);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
