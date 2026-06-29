@@ -232,6 +232,47 @@ Centered max-width container at 1200px with a two-column hero (text-left ~40%, m
 
 5. *Gradient hero backdrop.* Full-bleed band, 100vh on hero, linear-gradient(180deg, rgb(72,103,175) 0%, rgb(156,175,184) 50%, rgb(196,149,119) 100%) with an overlaid radial-gradient(50% 50% at 50% 35%, rgba(107,98,242,0.565) 0%, rgba(255,255,255,0) 100%) bleeding from upper-center.
 
+---
+
+## App Patterns (mobile PWA — added as screens are built)
+
+### Form Field / Input
+**Role:** Text input in auth, onboarding, add-expense form
+
+Full-width, height 48px, background #1d1d1d, border 1px #e5e5e5 at 10% opacity, radius 10px (`--radius-inputs`). Padding 12px 16px. DM Sans 16px weight 400, color #e5e5e5 placeholder color #686868. Focus state: border color #e5e5e5 at 30% opacity, no glow/shadow. Never use a colored focus ring — depth is expressed through opacity shift only.
+
+### Primary Button (White Pill)
+**Role:** Main submit/CTA in app screens
+
+Full-width, height 48px, radius 9999px, background #ffffff, text #000000, DM Sans 16px weight 500. Loading state: reduced opacity (60%), disabled pointer-events. Same as the marketing CTA pill but full-width in a mobile context.
+
+### Secondary Button (Glass Pill)
+**Role:** Less prominent action (e.g. "Join instead", "Back")
+
+Full-width, height 48px, radius 9999px, glass treatment (background #1d1d1d 80%, backdrop blur 20px, 1px #e5e5e5 at 10% border). Text #e5e5e5, DM Sans 16px weight 500.
+
+### Mode Switcher (Segmented Pill)
+**Role:** Toggle between two mutually exclusive modes (Create / Join)
+
+Pill container, radius 9999px, background #1d1d1d, padding 4px. Two equal segments; active segment: background #3d3d3d, radius 9999px, text #e5e5e5 weight 500. Inactive: text #686868 weight 400. DM Sans 15px.
+
+### Invite Code Display
+**Role:** Show the invite code after creating a couple
+
+Monospace code block: background #282828 (`--color-ink`), radius 10px, padding 16px 20px. Code text: Geist font, 24px weight 500, letter-spacing 0.1em, color #e5e5e5. Centered. Accompanied by a copy-to-clipboard icon button (32px, icon-only, ghost).
+
+### Mobile Bottom Nav (App Shell)
+**Role:** Primary navigation across 4 app screens
+
+Full-width fixed bar at bottom. Glass treatment (background #1d1d1d 80%, backdrop-filter blur 20px, 1px #e5e5e5 at 8% opacity border-top). 4 equal tabs: icon (20px stroke) + label (11px weight 500, letter-spacing 0.025em). Active tab: #e5e5e5. Inactive: #686868, hover: #c2c2c2. Padding respects `env(safe-area-inset-bottom)`.
+
+### Success/Danger Semantic Tones
+**Role:** Balance screen positive/negative values, form error states
+
+Success: `#4ade80` (muted green — readable on dark surfaces without being neon). Danger: `#f87171` (muted red). **These are the only chromatic colors outside the indigo accent** — use only for numeric balance values and inline error text, never for backgrounds or buttons.
+
+---
+
 ## Gradient System
 
 Gradients are atmospheric, never decorative chrome. Three uses only: (1) the full-bleed hero 'dawn wash' — cool blue fading to warm earth, evoking pre-sunrise sky; (2) a centered indigo radial spotlight behind hero content, the only place the brand accent appears and only as a glow, never as fill; (3) thin horizontal indigo hairlines (linear-gradient with transparent stops on either side of a central rgba(107,98,242,0.565) band) used as section dividers or accent strokes — always transparent→indigo→transparent, never solid. No gradient should ever appear on a button, card, or interactive surface.

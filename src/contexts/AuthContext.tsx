@@ -13,6 +13,7 @@ interface AuthContextValue {
   couple: CoupleInfo | null
   loading: boolean
   signOut: () => Promise<void>
+  refreshCouple: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -51,8 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  async function refreshCouple() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) await fetchCouple(user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, couple, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, couple, loading, signOut, refreshCouple }}>
       {children}
     </AuthContext.Provider>
   )
