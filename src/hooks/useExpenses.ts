@@ -10,6 +10,18 @@ export function useExpenses(coupleId: string | undefined) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
 
+  function fetchExpenses() {
+    return supabase
+      .from('expenses')
+      .select('*')
+      .order('expense_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setExpenses(data ?? [])
+        setLoading(false)
+      })
+  }
+
   useEffect(() => {
     if (!coupleId) return
     let mounted = true
@@ -36,5 +48,5 @@ export function useExpenses(coupleId: string | undefined) {
     return () => { mounted = false; supabase.removeChannel(channel) }
   }, [coupleId])
 
-  return { expenses, loading }
+  return { expenses, loading, refetch: fetchExpenses }
 }

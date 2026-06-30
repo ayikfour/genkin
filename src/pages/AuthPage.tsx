@@ -11,6 +11,9 @@ export function AuthPage() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<State>('idle')
   const [error, setError] = useState('')
+  const [code, setCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState('')
 
   useEffect(() => {
     if (session) navigate(couple ? '/log' : '/onboarding', { replace: true })
@@ -33,6 +36,23 @@ export function AuthPage() {
     } else {
       setState('sent')
     }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault()
+    if (!code.trim()) return
+    setVerifying(true)
+    setVerifyError('')
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: 'email',
+    })
+    if (err) {
+      setVerifyError(err.message || 'Invalid or expired code. Check the digits and try again.')
+      setVerifying(false)
+    }
+    // on success, AuthContext's session listener triggers the redirect effect above
   }
 
   return (
@@ -68,6 +88,65 @@ export function AuthPage() {
               >
                 Use a different email
               </button>
+
+              {/* Hairline divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '8px' }}>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(229,229,229,0.10)' }} />
+                <span style={{ fontSize: '13px', color: 'var(--color-fog)' }}>or enter the 6-digit code</span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(229,229,229,0.10)' }} />
+              </div>
+
+              <form onSubmit={handleVerify} className="space-y-3" style={{ textAlign: 'left' }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={code}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '48px',
+                    background: 'var(--color-ink)',
+                    border: '1px solid rgba(229,229,229,0.12)',
+                    borderRadius: 'var(--radius-input)',
+                    padding: '12px 16px',
+                    fontFamily: 'var(--font-geist)',
+                    fontSize: '24px',
+                    fontWeight: 500,
+                    letterSpacing: '0.3em',
+                    textAlign: 'center',
+                    color: 'var(--color-bone)',
+                    outline: 'none',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = 'rgba(229,229,229,0.30)')}
+                  onBlur={e => (e.target.style.borderColor = 'rgba(229,229,229,0.12)')}
+                />
+
+                {verifyError && (
+                  <p style={{ fontSize: '13px', color: 'var(--color-danger)', textAlign: 'center' }}>{verifyError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={verifying || code.length < 6}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '48px',
+                    borderRadius: 'var(--radius-pill)',
+                    background: verifying || code.length < 6 ? 'rgba(255,255,255,0.6)' : 'var(--color-paper)',
+                    color: 'var(--color-onyx)',
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    cursor: verifying || code.length < 6 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {verifying ? 'Verifying…' : 'Verify code →'}
+                </button>
+              </form>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">

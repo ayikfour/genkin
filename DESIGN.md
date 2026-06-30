@@ -304,7 +304,40 @@ Full-width fixed bar at bottom. Glass treatment (background #1d1d1d 80%, backdro
 ### Success/Danger Semantic Tones
 **Role:** Balance screen positive/negative values, form error states
 
-Success: `#4ade80` (muted green — readable on dark surfaces without being neon). Danger: `#f87171` (muted red). **These are the only chromatic colors outside the indigo accent** — use only for numeric balance values and inline error text, never for backgrounds or buttons.
+Success: `#4ade80` (muted green — readable on dark surfaces without being neon). Danger: `#f87171` (muted red). Outside the indigo accent, these are the only chromatic colors used in UI chrome (buttons, backgrounds, borders) — the one further exception is the Category Color Palette below, scoped strictly to chart data.
+
+### Toast / Snackbar
+**Role:** Brief confirmation after an action (expense added/updated/deleted) — feedback that doesn't require dismissal
+
+Fixed, bottom-centered above the FAB/nav, glass pill (background #1d1d1d 90%, backdrop blur 20px, 1px #e5e5e5 at 10% border), radius 9999px, padding 12px 20px. DM Sans 14px weight 500, color #e5e5e5. Optional leading checkmark in `--color-success`. Slides up + fades in (200ms), auto-dismisses after 2.5s, no manual close control — keep it out of the way of the next action.
+
+### OTP Code Input
+**Role:** Fallback sign-in on the auth screen — type the 6-digit email code instead of tapping the magic link (needed when the link can't be followed, e.g. sandboxed preview panes)
+
+Single text input (not 6 boxes), full-width, height 48px, same chrome as Form Field but centered text. Geist font, 24px weight 500, letter-spacing 0.3em, color #e5e5e5, numeric input mode, maxlength 6. Sits below the "Check your email" copy as a secondary path, separated by a hairline divider with "or enter the 6-digit code" label (13px, #686868, centered). Verify action reuses the Primary Button (White Pill) pattern.
+
+### Chart Card
+**Role:** Container for each Recharts visualization on the Dashboard screen
+
+Glass surface (`--color-char` background, 1px hairline border, `--radius-card`), padding 20px. Header row: title (DM Sans 15px weight 500, `--color-bone`) with an optional right-aligned stat or delta badge. Chart fills the remaining width, fixed height (160–220px depending on chart type) so cards stack predictably. Axis labels and gridlines stay muted (`--color-graphite`/`--color-fog`, never full white) so the data itself — not chrome — carries the color. Tooltips reuse the glass treatment (blurred dark pill, hairline border).
+
+### Category Color Palette
+**Role:** Distinguishing categories in the Dashboard's category breakdown donut — the only place beyond Success/Danger where multiple chromatic colors appear together
+
+A fixed, muted 8-color set — one per seeded category, desaturated enough to sit comfortably on the dark canvas without competing with indigo:
+
+| Category | Color |
+|---|---|
+| Groceries | `#f0a868` (muted amber) |
+| Food & Drink | `#e8847c` (muted coral) |
+| Transport | `#6ba3d6` (muted blue) |
+| Rent/Bills | `#9b8cd9` (muted violet) |
+| Entertainment | `#e0a8d8` (muted pink) |
+| Health | `#7bc9a8` (muted teal) |
+| Shopping | `#d6c178` (muted gold) |
+| Other | `#8a8a8a` (neutral gray) |
+
+Used only for chart fills/legends (donut segments, legend dots) — never for buttons, badges, or backgrounds elsewhere in the app.
 
 ---
 

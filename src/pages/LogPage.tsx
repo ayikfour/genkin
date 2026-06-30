@@ -1,10 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
+import { formatCurrency } from '../lib/format'
 import type { Expense } from '../types'
+
+const TOAST_COPY = { added: 'Expense added', updated: 'Expense updated', deleted: 'Expense deleted' } as const
 
 function formatDateHeader(dateStr: string): string {
   const today = new Date().toISOString().split('T')[0]
@@ -16,7 +19,7 @@ function formatDateHeader(dateStr: string): string {
 
 export function LogPage() {
   const { user, couple } = useAuth()
-  const { expenses, loading } = useExpenses(couple?.couple_id)
+  const { expenses, loading, refetch } = useExpenses(couple?.couple_id)
   const categories = useCategories()
   const members = useCoupleMembers(couple?.couple_id)
 
@@ -24,6 +27,18 @@ export function LogPage() {
   const [filterPaidBy, setFilterPaidBy] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2500)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  function handleSaved(action: 'added' | 'updated' | 'deleted') {
+    refetch()
+    setToast(TOAST_COPY[action])
+  }
 
   const partner = members.find(m => m.user_id !== user?.id)
 
@@ -153,7 +168,7 @@ export function LogPage() {
                     {formatDateHeader(date)}
                   </span>
                   <span style={{ fontFamily: 'var(--font-geist)', fontSize: '13px', color: 'var(--color-fog)' }}>
-                    {items.reduce((s, e) => s + e.amount, 0).toFixed(2)}
+                    {formatCurrency(items.reduce((s, e) => s + e.amount, 0))}
                   </span>
                 </div>
 
@@ -198,7 +213,7 @@ export function LogPage() {
 
                         {/* Amount */}
                         <span style={{ fontFamily: 'var(--font-geist)', fontSize: '16px', fontWeight: 500, color: 'var(--color-bone)', flexShrink: 0 }}>
-                          {expense.amount.toFixed(2)}
+                          {formatCurrency(expense.amount)}
                         </span>
                       </button>
                     )
@@ -227,12 +242,34 @@ export function LogPage() {
         +
       </button>
 
+      {/* Toast */}
+      <div
+        style={{
+          position: 'fixed', bottom: 'calc(80px + var(--safe-bottom))', left: '50%', zIndex: 30,
+          transform: toast ? 'translate(-50%, 0)' : 'translate(-50%, 12px)',
+          opacity: toast ? 1 : 0,
+          pointerEvents: 'none',
+          transition: 'transform 200ms ease, opacity 200ms ease',
+          background: 'rgba(29,29,29,0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(229,229,229,0.10)',
+          borderRadius: '9999px',
+          padding: '12px 20px',
+          fontSize: '14px', fontWeight: 500, color: 'var(--color-bone)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {toast}
+      </div>
+
       {/* Spinner keyframes */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <AddExpenseSheet
         isOpen={sheetOpen}
         onClose={closeSheet}
+        onSaved={handleSaved}
         expense={editingExpense}
         categories={categories}
         members={members}

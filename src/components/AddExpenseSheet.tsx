@@ -6,9 +6,17 @@ import type { Expense, Category, CoupleMember } from '../types'
 interface Props {
   isOpen: boolean
   onClose: () => void
+  onSaved: (action: 'added' | 'updated' | 'deleted') => void
   expense?: Expense | null
   categories: Category[]
   members: CoupleMember[]
+}
+
+function formatAmount(raw: string): string {
+  if (!raw) return ''
+  const [intPart, decPart] = raw.split('.')
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return decPart !== undefined ? `${grouped}.${decPart}` : grouped
 }
 
 const inputStyle: React.CSSProperties = {
@@ -24,7 +32,7 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-export function AddExpenseSheet({ isOpen, onClose, expense, categories, members }: Props) {
+export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories, members }: Props) {
   const { user, couple } = useAuth()
   const isEdit = !!expense
 
@@ -33,7 +41,7 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
   const [paidBy, setPaidBy] = useState(user?.id ?? '')
-  const [split, setSplit] = useState<'even' | 'payer_only'>('even')
+  const [split, setSplit] = useState<'even' | 'payer_only'>('payer_only')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -53,7 +61,7 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
       setDescription('')
       setDate(new Date().toISOString().split('T')[0])
       setPaidBy(user?.id ?? '')
-      setSplit('even')
+      setSplit('payer_only')
     }
     setError('')
     setSaving(false)
@@ -82,13 +90,14 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
       : await supabase.from('expenses').insert(payload)
 
     if (err) { setError(err.message); setSaving(false) }
-    else onClose()
+    else { onSaved(isEdit ? 'updated' : 'added'); onClose() }
   }
 
   async function handleDelete() {
     if (!expense) return
     setDeleting(true)
     await supabase.from('expenses').delete().eq('id', expense.id)
+    onSaved('deleted')
     onClose()
   }
 
@@ -100,7 +109,7 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
       <div
         onClick={onClose}
         style={{
-          position: 'fixed', inset: 0, zIndex: 40,
+          position: 'fixed', inset: 0, zIndex: 60,
           background: 'rgba(0,0,0,0.6)',
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
@@ -111,7 +120,7 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
       {/* Sheet */}
       <div
         style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70,
           background: 'rgba(20,20,20,0.96)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
@@ -148,11 +157,14 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
           {/* Amount */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
               placeholder="0.00"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
+              value={formatAmount(amount)}
+              onChange={e => {
+                const raw = e.target.value.replace(/,/g, '')
+                if (/^\d*\.?\d*$/.test(raw)) setAmount(raw)
+              }}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -266,7 +278,7 @@ export function AddExpenseSheet({ isOpen, onClose, expense, categories, members 
               Split
             </p>
             <div style={{ display: 'flex', background: 'var(--color-ink)', borderRadius: '9999px', padding: '4px', gap: '4px' }}>
-              {([['even', 'Split evenly'], ['payer_only', 'Paid alone']] as const).map(([val, label]) => (
+              {([['payer_only', 'Paid alone'], ['even', 'Split evenly']] as const).map(([val, label]) => (
                 <button
                   key={val}
                   onClick={() => setSplit(val)}
