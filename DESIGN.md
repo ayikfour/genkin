@@ -236,6 +236,41 @@ Centered max-width container at 1200px with a two-column hero (text-left ~40%, m
 
 ## App Patterns (mobile PWA — added as screens are built)
 
+### Expense List Row
+**Role:** Single item in the shared expense log
+
+Full-width tappable row, 64px min-height, horizontal padding 20px, vertical padding 14px. Three-column layout: icon well (36px circle, #282828 fill, 8px radius, emoji centered at 18px) | text stack (description in #e5e5e5 16px weight 500; meta line in #686868 14px: "You · Split" or "Partner · Solo") | amount (#e5e5e5 Geist 16px weight 500, tabular-nums, right-aligned). Rows separated by 1px #e5e5e5 hairlines at 6% opacity. Tap opens the edit sheet.
+
+### Amount Display
+**Role:** Numeric money values throughout the app
+
+Always Geist font, `font-variant-numeric: tabular-nums`, weight 500. Large hero amounts (balance screen): 40px. List row amounts: 16px. Form input amounts: 32px centered. No currency symbol in the UI for now — single currency assumed per PRD. Positive balance: `--color-success` (#4ade80). Negative balance: `--color-danger` (#f87171). Neutral expense amounts: `--color-bone` (#e5e5e5).
+
+### FAB (Floating Action Button)
+**Role:** Primary add action on the Log screen
+
+56px circle, background #ffffff, icon #000000 (24px + glyph). Fixed bottom-right, 20px from edge, sits 16px above the bottom nav. Shadow: `0 4px 16px rgba(0,0,0,0.4)`. No label — icon alone is sufficient in context. Single tap opens the Add Expense sheet.
+
+### Bottom Sheet
+**Role:** Add/edit expense form, slides up from bottom
+
+Full-width panel anchored to viewport bottom. Top corners 24px radius, bottom 0. Glass surface (#1d1d1d at 92% opacity, backdrop blur 24px, 1px #e5e5e5 at 8% top border). Max-height 90vh, scrollable. Handle bar: 36×4px pill, #3d3d3d, centered 12px from top. Header row: title (DM Sans 18px weight 500 #e5e5e5) left, close button (ghost icon, 32px) right. Dark backdrop behind: rgba(0,0,0,0.6). Slide-up animation: 280ms ease transform.
+
+### Category Chip Grid
+**Role:** Category selector inside the add/edit form
+
+2-row scrollable horizontal strip of category pills. Each pill: 9999px radius, height 36px, padding 8px 14px, gap 8px. Inactive: background #282828, text #686868. Active/selected: background #3d3d3d, text #e5e5e5, 1px #e5e5e5 at 20% border. Emoji icon at 16px + name at 13px weight 500. Never truncate.
+
+### Filter Chip Bar
+**Role:** Category and payer filter on the Log screen
+
+Horizontal scrollable row (no scrollbar), 8px gap, 16px horizontal padding, 12px vertical. Each chip: 9999px radius, height 32px, padding 6px 14px, DM Sans 13px weight 500. Inactive: background #1d1d1d, border 1px #e5e5e5 at 10%, text #686868. Active: background #3d3d3d, border 1px #e5e5e5 at 20%, text #e5e5e5.
+
+### Empty State
+**Role:** Log screen when no expenses exist yet
+
+Centered column, 48px icon (stroke, #3d3d3d), heading DM Sans 18px weight 500 #e5e5e5, subtext 14px #686868. Button to add first expense (white pill, same as primary CTA). No illustration — the icon and copy do the work.
+
 ### Form Field / Input
 **Role:** Text input in auth, onboarding, add-expense form
 
