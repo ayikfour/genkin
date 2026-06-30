@@ -40,7 +40,15 @@ Design tokens (source of truth for all styling): see `design.md`.
 
 ## Commands
 
-_To be filled in once the project is scaffolded (dev server, build, lint, etc.)._
+- `npm run dev` — start the Vite dev server (default port 5173)
+- `npm run build` — type-check (`tsc -b`) and build for production into `dist/`
+- `npm run preview` — serve the production build locally
+- `npm run lint` — run oxlint
+- `npx tsc --noEmit` — type-check only, no build output
+
+Database changes live in `supabase/migrations/*.sql` — run new migration files
+manually in the Supabase Dashboard SQL Editor (no CLI/migration runner wired
+up yet, since the project doesn't use the Supabase CLI for local dev).
 
 ## Reference docs
 
