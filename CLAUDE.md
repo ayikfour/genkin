@@ -35,8 +35,9 @@ Design tokens (source of truth for all styling): see `design.md`.
   intentionally dropped (see PRD §4 for why and how to add it back later).
 - Don't add paid services or tiers without flagging it first — the $0/month
   constraint is a hard requirement, not a preference.
-- Build one screen/component at a time against the Figma file rather than
-  the whole app in one pass.
+- Build one screen/component at a time, styled per `design.md`, rather than
+  the whole app in one pass. (No Figma file is involved in this project —
+  see PRD §7 for why; `design.md` is the only source of truth.)
 
 ## Commands
 
@@ -48,11 +49,29 @@ Design tokens (source of truth for all styling): see `design.md`.
 
 Database changes live in `supabase/migrations/*.sql` — run new migration files
 manually in the Supabase Dashboard SQL Editor (no CLI/migration runner wired
-up yet, since the project doesn't use the Supabase CLI for local dev).
+up yet, since the project doesn't use the Supabase CLI for local dev). See
+**Environments** below — every new migration must be run on *both* Supabase
+projects, not just one.
+
+## Environments
+
+Two separate Supabase projects, same free tier, same org:
+
+| | Project | Used by | `.env` |
+|---|---|---|---|
+| Dev | `calcula-dev` (`nvoevzkqaczhvttfdvqh`) | Local `npm run dev` | `.env` (gitignored, local) |
+| Production | `calcula` (`oizxibiwrmpxdleqhllw`) | Vercel deployment | Vercel project env vars |
+
+Local `.env` always points at `calcula-dev` — never point it at production to
+avoid mixing real expense data with test data from local development. The
+two databases are **not** kept in sync automatically: every new migration
+file in `supabase/migrations/` must be run manually via the SQL Editor on
+*both* projects (dev first to test, then production before/with the deploy
+that depends on it). There's no tooling enforcing this — it's discipline only,
+so double-check after writing a new migration that it actually landed on both.
 
 ## Reference docs
 
 - `expense-tracker-prd.md` — full feature list, data model, free-tier
   caveats, build order
-- `design.md` — colors, type scale, spacing, component patterns (fill in
-  once the Figma file is available)
+- `design.md` — colors, type scale, spacing, component patterns
