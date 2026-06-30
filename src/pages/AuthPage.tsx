@@ -26,7 +26,10 @@ export function AuthPage() {
       options: { emailRedirectTo: window.location.origin },
     })
     if (err) {
-      setError(err.message)
+      // Supabase sometimes returns SMTP errors as a raw JSON string like "{}"
+      let msg = err.message ?? ''
+      try { const p = JSON.parse(msg); msg = p.message ?? p.error ?? '' } catch { /* not JSON */ }
+      setError(msg || 'Failed to send email. Check your address and try again.')
       setState('error')
     } else {
       setState('sent')
