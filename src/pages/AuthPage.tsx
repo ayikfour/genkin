@@ -73,7 +73,7 @@ export function AuthPage() {
         {/* Wordmark */}
         <div className="space-y-1 text-center">
           <h1 className="font-heading text-3xl font-medium tracking-tight text-foreground">
-            Calcula
+            Genkin
           </h1>
           <p className="text-sm text-muted-foreground">
             Shared expenses for two

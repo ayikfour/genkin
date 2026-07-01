@@ -5,7 +5,7 @@
 
 Dimension speaks in a near-monochrome dark register: a near-black canvas, glassmorphic surfaces that float above it, and one muted indigo that surfaces only as accent punctuation. Typography is restrained and humanist — DM Sans for body, Geist for display — letting the 72px whisper-weight headlines carry the room without color needing to shout. Components are pill-shaped or soft-rounded; nearly every interactive element (buttons, nav, tags, the floating dock) uses a 9999px radius, while cards settle into 24–40px curves. The page breathes: generous vertical rhythm, thin hairline borders in #e5e5e5 at low opacity, and minimal elevation — depth comes from translucency and blur, not shadow stacks.
 
-> **Status note (2026-06-30):** this file originated as the style reference for an unrelated dark-glassmorphic *marketing landing page* — that's what everything from here through **Quick Start** describes (hero headlines, floating pill nav, 1200px desktop layout, etc.). It was reused as the token source for **Calcula**, a separate mobile PWA, with the colors/type/spacing/glassmorphism kept verbatim. Everything Calcula-specific lives in **App Patterns** below and **Implemented Theme (Calcula)** right after it — those two sections are the authoritative reference for that app; the sections above are historical/landing-page context, not things Calcula screens should match (no hero, no 1200px layout, no floating desktop nav).
+> **Status note (2026-06-30):** this file originated as the style reference for an unrelated dark-glassmorphic *marketing landing page* — that's what everything from here through **Quick Start** describes (hero headlines, floating pill nav, 1200px desktop layout, etc.). It was reused as the token source for **Genkin**, a separate mobile PWA, with the colors/type/spacing/glassmorphism kept verbatim. Everything Genkin-specific lives in **App Patterns** below and **Implemented Theme (Genkin)** right after it — those two sections are the authoritative reference for that app; the sections above are historical/landing-page context, not things Genkin screens should match (no hero, no 1200px layout, no floating desktop nav).
 
 ## Tokens — Colors
 
@@ -238,12 +238,12 @@ Centered max-width container at 1200px with a two-column hero (text-left ~40%, m
 
 ## App Patterns (mobile PWA — added as screens are built)
 
-> **Status note (2026-07-01):** Calcula's styling is being migrated onto
+> **Status note (2026-07-01):** Genkin's styling is being migrated onto
 > [shadcn/ui](https://ui.shadcn.com), using a specific preset theme
 > (`ui.shadcn.com/create?preset=brpK&template=vite`) rather than reskinning
 > shadcn to match the dark-glassmorphic identity described below. That
 > preset's own colors, radius, and font tokens are the new source of truth —
-> see **Implemented Theme (Calcula)** and **shadcn Components (Calcula)**
+> see **Implemented Theme (Genkin)** and **shadcn Components (Genkin)**
 > further down, which supersede the color/radius/glassmorphism specifics in
 > the patterns below. The *role* each pattern plays (what it's for, where it
 > appears) still holds; only the visual treatment (colors, pill radii, glass
@@ -327,7 +327,7 @@ Fixed, bottom-centered above the FAB/nav, glass pill (background #1d1d1d 90%, ba
 ### OTP Code Input
 **Role:** Fallback sign-in on the auth screen — type the email code instead of tapping the magic link (needed when the link can't be followed, e.g. sandboxed preview panes)
 
-Built on shadcn's `InputOTP`, two groups of 4 boxes separated by a divider (`InputOTPSeparator`). **8 digits, not 6** — this project's `calcula-dev` Supabase instance issues 8-digit email OTPs (re-check the prod project if this ever changes), and the input previously capped at 6 characters, silently truncating real codes and blocking the whole fallback path. Sits below the "Check your email" copy as a secondary path, separated by a hairline divider with "or enter the code" label. Verify action reuses the primary `Button`.
+Built on shadcn's `InputOTP`, two groups of 4 boxes separated by a divider (`InputOTPSeparator`). **8 digits, not 6** — this project's `genkin-dev` Supabase instance issues 8-digit email OTPs (re-check the prod project if this ever changes), and the input previously capped at 6 characters, silently truncating real codes and blocking the whole fallback path. Sits below the "Check your email" copy as a secondary path, separated by a hairline divider with "or enter the code" label. Verify action reuses the primary `Button`.
 
 For local testing where the magic link can't reach the environment (e.g. a preview pane with its own browser context, separate from your inbox), `scripts/dev-otp.mjs` generates a real OTP via the Supabase admin API — no email round-trip needed. See the script's header comment for usage.
 
@@ -356,9 +356,9 @@ Used only for chart fills/legends (donut segments, legend dots) — never for bu
 
 ---
 
-## Implemented Theme (Calcula)
+## Implemented Theme (Genkin)
 
-> **Superseded 2026-07-01** — Calcula now runs on shadcn/ui's `brpK` preset
+> **Superseded 2026-07-01** — Genkin now runs on shadcn/ui's `brpK` preset
 > (`radix-nova` style, `neutral` base color, `phosphor` icon library, `0`
 > base radius — sharp corners, not the pill/24px system below). The old
 > `--color-void`/`--color-char`/pill-radius/glassmorphism tokens in this
@@ -372,7 +372,7 @@ Used only for chart fills/legends (donut segments, legend dots) — never for bu
 > - Background/foreground/card/popover/primary/secondary/muted/accent/
 >   destructive/border/input/ring/chart-1..5/sidebar-* — all defined as
 >   `oklch()` values, light set under `:root`, dark overrides under `.dark`.
->   The `brpK` preset defaults to **light** mode; since Calcula has always
+>   The `brpK` preset defaults to **light** mode; since Genkin has always
 >   been dark-only (PWA `theme-color`/manifest background is `#0a0a0a`, no
 >   light/dark toggle exists), `<html>` now carries a hardcoded `class="dark"`
 >   in [index.html](index.html) to force the dark variable set everywhere —
@@ -468,7 +468,7 @@ historical reference only — it no longer matches `src/index.css`.
 }
 ```
 
-Indigo (`--color-indigo`) is defined but **not yet used anywhere in Calcula**
+Indigo (`--color-indigo`) is defined but **not yet used anywhere in Genkin**
 — every screen so far has only needed the monochrome palette plus success/
 danger. It stays reserved for the same "glow accent only, never a fill"
 role as the original system if a future screen calls for it. (Historical —
@@ -476,9 +476,9 @@ predates the shadcn migration; the indigo token is untouched by it.)
 
 ---
 
-## shadcn Components (Calcula)
+## shadcn Components (Genkin)
 
-Calcula is built on [shadcn/ui](https://ui.shadcn.com) (`components.json`:
+Genkin is built on [shadcn/ui](https://ui.shadcn.com) (`components.json`:
 style `radix-nova`, base color `neutral`, icon library `phosphor`), themed
 via the `brpK` preset rather than a from-scratch reskin. Components live in
 `src/components/ui/` (shadcn-owned — re-run `shadcn add`/`diff` to update

@@ -59,10 +59,10 @@ Two separate Supabase projects, same free tier, same org:
 
 | | Project | Used by | `.env` |
 |---|---|---|---|
-| Dev | `calcula-dev` (`nvoevzkqaczhvttfdvqh`) | Local `npm run dev` | `.env` (gitignored, local) |
-| Production | `calcula` (`oizxibiwrmpxdleqhllw`) | Vercel deployment | Vercel project env vars |
+| Dev | `genkin-dev` (`nvoevzkqaczhvttfdvqh`) | Local `npm run dev` | `.env` (gitignored, local) |
+| Production | `genkin` (`oizxibiwrmpxdleqhllw`) | Vercel deployment | Vercel project env vars |
 
-Local `.env` always points at `calcula-dev` — never point it at production to
+Local `.env` always points at `genkin-dev` — never point it at production to
 avoid mixing real expense data with test data from local development. The
 two databases are **not** kept in sync automatically: every new migration
 file in `supabase/migrations/` must be run manually via the SQL Editor on

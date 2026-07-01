@@ -17,8 +17,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Calcula',
-        short_name: 'Calcula',
+        name: 'Genkin',
+        short_name: 'Genkin',
         description: "Couple's shared expense tracker",
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',

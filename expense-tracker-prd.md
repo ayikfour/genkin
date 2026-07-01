@@ -5,7 +5,7 @@
 ## 0. Status — MVP shipped (2026-06-30)
 
 All core features below are built and deployed at
-[calcula-azure-five.vercel.app](https://calcula-azure-five.vercel.app/),
+[usegenkin.vercel.app](https://usegenkin.vercel.app/),
 running on $0/month infrastructure (Supabase free tier + Vercel free tier +
 Resend free tier for auth email). See `CLAUDE.md` §Commands for local dev,
 and `supabase/migrations/*.sql` for the as-built schema (the sketch in §5
@@ -98,7 +98,7 @@ Row Level Security (RLS) in Postgres scopes every query to rows where `couple_id
 | Backend | Supabase (free tier) | Postgres DB + Auth + Realtime + Edge Functions, bundled, generous free tier |
 | Auth email | Resend (free tier, custom SMTP) | Required in practice — see friction points below |
 | Hosting (frontend) | Vercel (free tier) | Standard free static hosting for Vite/React apps; what was actually used |
-| Version control | GitHub (free) | `github.com/ayikfour/calcula` |
+| Version control | GitHub (free) | `github.com/ayikfour/genkin` |
 
 This stack is $0 at your scale (2 users). The realistic friction points, in order of likelihood:
 - Supabase's 7-day inactivity pause (only matters if you both stop using the app for a week)
@@ -119,7 +119,7 @@ incrementally, one pattern at a time, as each mobile screen was built (list
 row, bottom sheet, chart card, etc.) — never introducing a new color/spacing/
 component without documenting it there first, per the project's hard rule.
 That section is now the authoritative reference for anything touching the
-Calcula UI; the rest of the original guidance below is kept for future
+Genkin UI; the rest of the original guidance below is kept for future
 projects that do start from an actual Figma file.
 
 **Best path: Figma's MCP (Model Context Protocol) server.** It lets Claude Code read your actual Figma file — components, colors, spacing, typography, layout — instead of you describing it in words or Claude Code guessing from a screenshot. Two versions:
