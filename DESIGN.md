@@ -269,6 +269,53 @@ Always Geist font, `font-variant-numeric: tabular-nums`, weight 500. Large hero 
 
 Full-width panel anchored to viewport bottom. Top corners 24px radius, bottom 0. Glass surface (#1d1d1d at 92% opacity, backdrop blur 24px, 1px #e5e5e5 at 8% top border). Max-height 90vh, scrollable. Handle bar: 36×4px pill, #3d3d3d, centered 12px from top. Header row: title (DM Sans 18px weight 500 #e5e5e5) left, close button (ghost icon, 32px) right. Dark backdrop behind: rgba(0,0,0,0.6). Slide-up animation: 280ms ease transform.
 
+**Drag-to-dismiss (implemented in `sheet.tsx`):** the whole sheet is
+draggable, not just the handle — matching native bottom-sheet apps where you
+can grab anywhere on the sheet body. A press-and-drag down commits to
+dragging the sheet only once movement exceeds a 6px threshold *and* the
+sheet's own scrollable body is at `scrollTop <= 0`; otherwise the same
+downward motion scrolls the form as normal. This means a drag started
+mid-scroll naturally hands off to dismiss-dragging the moment the content
+reaches its top edge, and a plain tap/scroll never gets hijacked. Once
+committed, the sheet translates via `transform: translateY()`, released
+either on distance (25% of sheet height, clamped 80–200px) or on flick
+velocity (>0.5px/ms). The 36×4px handle pill (`bg-muted-foreground/30`,
+shadcn token, not the raw `#3d3d3d` hex above) is a purely visual affordance
+inside this same draggable area, with its own `touch-action: none` for an
+immediate, guaranteed grab right where the affordance is drawn. Only
+`side="bottom"` sheets get this; `left`/`right`/`top` sheets are unaffected.
+Dismissal fires through a hidden `SheetPrimitive.Close` ref (`.click()`),
+called synchronously (no `setTimeout`) so it reuses the same `onOpenChange`
+path as the visible close button — no new prop needed on `<Sheet>` consumers.
+A deferred click was tried first and caused a real bug: it left a window
+where the sheet was still "open" from Radix's perspective (just visually
+dragged off-screen), so reopening inside that window would get silently
+closed again moments later when the stale timeout finally fired.
+
+**Reopen-after-dismiss reset:** Radix mounts/unmounts the sheet's DOM node on
+its own internal Presence timing — a commit that doesn't necessarily coincide
+with *this* component re-rendering. A `useEffect`/`useLayoutEffect` watching
+`data-state` can therefore miss the actual open transition entirely, leaving
+the previous dismissal's drag offset applied to a sheet that looks freshly
+reopened (it renders pre-dragged-away, or appears to "auto-dismiss" itself).
+The fix is a `MutationObserver` on `data-state`, attached via the content
+element's ref callback — tied directly to the real DOM mutation regardless of
+which component's render triggered it, so it reliably resets drag state the
+moment the sheet is genuinely open again.
+
+**PWA pull-to-refresh conflict:** since Genkin runs installed as a standalone
+PWA, an unguarded swipe down from the top of the page invokes the OS/browser
+pull-to-refresh gesture, which competes with any downward drag gesture in-app.
+Two guards, both required:
+- `overscroll-behavior-y: contain` on `html, body` ([index.css](src/index.css))
+  stops the refresh/rubber-band chrome gesture from firing app-wide, not just
+  inside the sheet.
+- The sheet's scrollable body additionally sets `overscroll-contain`
+  (Tailwind's `overscroll-behavior: contain`) so scrolling the form to its top
+  edge doesn't chain into a page-level bounce. Radix's own scroll lock
+  (`react-remove-scroll`, applied automatically while the sheet is open)
+  handles the rest by blocking touchmove outside the sheet's scrollable area.
+
 ### Category Chip Grid
 **Role:** Category selector inside the add/edit form
 

@@ -107,7 +107,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
 
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto rounded-t-2xl">
+      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>{isEdit ? 'Edit expense' : 'Add expense'}</SheetTitle>
         </SheetHeader>

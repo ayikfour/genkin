@@ -62,6 +62,10 @@ html, body, #root {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Installed as a PWA, an unguarded swipe-down at the top of the page
+     triggers the browser/OS pull-to-refresh gesture, which fights with any
+     in-app drag gesture (e.g. the bottom sheet's drag-to-dismiss handle). */
+  overscroll-behavior-y: contain;
 }
 
 /* Safe-area insets for notched phones */
