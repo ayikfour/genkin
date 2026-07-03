@@ -411,6 +411,8 @@ Monospace code block: background #282828 (`--color-ink`), radius 10px, padding 1
 
 Full-width fixed bar at top, replacing the earlier bottom nav now that the Balance screen (and its 4th tab) has been removed. Plain text-button tabs — no icons — in `font-heading` 18px weight 500, `gap-5` between tabs, `px-5` horizontal padding. Active tab: `--foreground`. Inactive: `--muted-foreground`, hover `--foreground`. No background fill or border — the bar is fully transparent and floats directly over whatever scrolls beneath it, keeping the page's own background as the only surface. Padding respects `env(safe-area-inset-top)` instead of the bottom inset.
 
+Since the active tab already names the screen, none of the three pages (Logs, Stats, Settings) render their own duplicate `<h1>` page heading — content starts directly with the first card/row, relying on the nav label alone for orientation.
+
 ### Success/Danger Semantic Tones
 **Role:** Form error states, Dashboard/Stats month-over-month delta indicator
 

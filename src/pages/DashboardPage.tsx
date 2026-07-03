@@ -85,10 +85,6 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4 px-5 pt-2 pb-6">
-      <h1 className="font-heading mb-1 text-[28px] font-medium tracking-tight text-foreground">
-        Stats
-      </h1>
-
       {/* Monthly total */}
       <Card className="p-5">
         <div className="flex items-start justify-between">
