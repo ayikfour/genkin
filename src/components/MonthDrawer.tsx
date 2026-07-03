@@ -24,7 +24,7 @@ export function MonthDrawer({ months, selectedMonth, onSelect }: Props) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="h-12 gap-1.5 px-4">
+      <Button onClick={() => setOpen(true)} className="gap-1.5">
         {monthLabel(selectedMonth, multiYear)}
         <CaretDown className="size-3.5" />
       </Button>

@@ -164,14 +164,14 @@ export function LogPage() {
         className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between px-5 pt-3"
         style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
       >
-        <Button onClick={openAdd} size="icon" className="size-12" aria-label="Add expense">
+        <Button onClick={openAdd} size="icon" aria-label="Add expense">
           <Plus className="size-5" weight="bold" />
         </Button>
 
         <div className="flex items-center gap-2">
           <Button
             onClick={() => { setFilterDrawerOpen(true); setOpenSwipeRowId(null) }}
-            className="h-12 gap-1.5 px-4"
+            className="gap-1.5"
           >
             {hasActiveFilters ? `${activeFilterCount} · Filter` : 'Filter'}
             <CaretDown className="size-3.5" />

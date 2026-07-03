@@ -496,6 +496,14 @@ Used only for chart fills/legends (donut segments, legend dots) — never for bu
 >   `Button`'s `h-8` resolved to `8px` tall instead of the intended `32px`).
 >   Nothing in the codebase referenced `var(--spacing-N)` directly, so
 >   removal was safe; Tailwind's default spacing scale now applies uniformly.
+> - `Button`'s default and `icon` sizes were bumped from `h-8`/`size-8` (32px)
+>   to `h-12`/`size-12` (48px) — 32px was too small a tap target on mobile.
+>   48px is now the app's minimum button height everywhere the default size
+>   applies (nearly every `Button` in the app, since most call sites don't
+>   override `size`); the compact `xs`/`sm`/`icon-xs`/`icon-sm` sizes are
+>   unchanged and stay reserved for secondary chrome like sheet/dialog close
+>   buttons, not primary tap targets. `lg`/`icon-lg` moved from 36px to 56px
+>   to stay a step above the new default.
 > - `.glass` (glassmorphism recipe) is being retired — drop it once
 >   [TopNav.tsx](src/components/TopNav.tsx),
 >   [SettingsPage.tsx](src/pages/SettingsPage.tsx),
