@@ -338,9 +338,10 @@ elsewhere in the app, and this row is a direct-action control, not a
 selection, so it gets the same bordered rectangle language as buttons
 instead. Below that: the amount, given `py-6` (24px) of breathing room above
 and below so it doesn't feel squeezed between the segmented row and the
-description field; a plain `Input` for description at `h-[72px]` (taller
-than the default 48px input height, since it's the sheet's primary text
-field) with no `Label` above it — the placeholder carries the meaning,
+description field; a plain `Input` for description at the standard `h-12`
+(48px) input height — a taller `h-[72px]` was tried and looked oversized/
+disproportionate for a single-line field, so it stayed at the default — with
+no `Label` above it — the placeholder carries the meaning,
 though an `aria-label="Description"` keeps it named for screen readers; then
 a final row pairing a `Button` (`variant="outline"`, icon + name + trailing
 `CaretRight`) that opens the category picker with the full-width primary

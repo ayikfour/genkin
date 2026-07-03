@@ -218,7 +218,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
               aria-label="Description"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="h-[72px]"
+              className="h-12"
             />
 
             {/* Category + Save */}
