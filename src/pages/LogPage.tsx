@@ -8,7 +8,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { FilterDrawer } from '../components/FilterDrawer'
-import { MonthDropdown } from '../components/MonthDropdown'
+import { MonthDrawer } from '../components/MonthDrawer'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import type { Expense } from '../types'
@@ -177,7 +177,7 @@ export function LogPage() {
             <CaretDown className="size-3.5" />
           </Button>
           {availableMonths.length > 0 && selectedMonth && (
-            <MonthDropdown
+            <MonthDrawer
               months={availableMonths}
               selectedMonth={selectedMonth}
               onSelect={m => { setSelectedMonth(m); setOpenSwipeRowId(null) }}

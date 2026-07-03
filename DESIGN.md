@@ -264,7 +264,7 @@ Always Geist font, `font-variant-numeric: tabular-nums`, weight 500. List row am
 ### Bottom Toolbar (Log screen)
 **Role:** Add action + list filtering, fixed to the bottom of the Log screen
 
-Fixed full-width row at the viewport bottom, `justify-between`, 20px horizontal padding, respecting `env(safe-area-inset-bottom)`. All three controls share one height — 48px (`h-12`) — so they read as a single action group despite the Add button being icon-only and the other two carrying text: Left: the Add button, `size="icon"` shadcn `Button` sized to 48×48 (`size-12`) — **square, not pill**, since the implemented theme's `--radius: 0` makes the default `rounded-lg` render as sharp corners; this is the current square button style, superseding the old pill-shaped FAB. Right: "Filter" button (default `Button` variant, `h-12 px-4`, trailing `CaretDown` icon matching the Month Dropdown's chevron — not a distinct icon — so the two read as the same control type) and the Month Dropdown (`data-[size=default]:h-12 px-4` override on its `SelectTrigger`), grouped with an 8px gap. Both styled with the same `bg-primary`/`text-primary-foreground` treatment as the Add button (white-on-dark) rather than the muted `secondary` variant. Active-filter state is shown as a leading count in the label itself — "Filter" becomes "1 · Filter" or "2 · Filter" — not a separate dot/badge. No background/blur behind the row — the three buttons float directly over the scrolling list, which carries `pb-24` so the last row always clears them.
+Fixed full-width row at the viewport bottom, `justify-between`, 20px horizontal padding, respecting `env(safe-area-inset-bottom)`. All three controls share one height — 48px (`h-12`) — so they read as a single action group despite the Add button being icon-only and the other two carrying text: Left: the Add button, `size="icon"` shadcn `Button` sized to 48×48 (`size-12`) — **square, not pill**, since the implemented theme's `--radius: 0` makes the default `rounded-lg` render as sharp corners; this is the current square button style, superseding the old pill-shaped FAB. Right: "Filter" button and the Month Drawer trigger (both plain `Button`s, `h-12 px-4`, trailing `CaretDown`), grouped with an 8px gap. Both styled with the same `bg-primary`/`text-primary-foreground` treatment as the Add button (white-on-dark) rather than the muted `secondary` variant. Active-filter state is shown as a leading count in the label itself — "Filter" becomes "1 · Filter" or "2 · Filter" — not a separate dot/badge. No background/blur behind the row — the three buttons float directly over the scrolling list, which carries `pb-24` so the last row always clears them.
 
 ### Bottom Sheet
 **Role:** Add/edit expense form, slides up from bottom
@@ -371,10 +371,10 @@ instance, not inline in the form)
 
 Bottom `Sheet` (same primitive/pattern as the Add/Edit Expense sheet and the Category Chip Grid below — a sibling `Sheet` instance, not nested inline). Contains a "Paid by" `Chip` group and a "Category" `Chip` grid, each under a small uppercase label. Selections are staged locally and only committed on tap; a two-button footer (`SheetFooter`, row layout) holds "Reset" (secondary `Button`, clears both filters and closes) and "Filter" (primary `Button`, applies the staged selections and closes). The "Filter" toolbar button reflects active-filter count in its own label ("1 · Filter", "2 · Filter") rather than a separate dot indicator.
 
-### Month Dropdown
+### Month Drawer
 **Role:** Filter the Log screen to a single month, shown next to the Filter button
 
-Built on shadcn's `Select` (`select.tsx`), left at its default trigger styling — **square** (`rounded-lg`, which the implemented theme's `--radius: 0` renders as sharp corners), matching the Add and Filter buttons beside it in the bottom toolbar rather than the old pill language. Options are generated dynamically from the distinct months present in the couple's `expense_date` values (not a static calendar list) — sorted most-recent-first, defaulting to the most recent month with data. Label shows just the month name ("October"), or "Month Year" if the couple's history spans more than one calendar year.
+Same `Sheet` + `Chip` pattern as the Filter Drawer above (not a native `Select` — swapped from an earlier `Select`-based version so all three bottom-toolbar controls open the same style of picker). The trigger is a plain `Button` (`h-12 px-4`, trailing `CaretDown`) showing the current month; tapping it opens a bottom `Sheet` titled "Month" containing one `Chip` per available month — tapping a `Chip` selects it and closes the sheet immediately (single-select, no Reset/Apply footer, matching the Category Chip Grid's tap-to-pick behavior rather than the Filter Drawer's stage-then-apply behavior). Options are generated dynamically from the distinct months present in the couple's `expense_date` values (not a static calendar list) — sorted most-recent-first, defaulting to the most recent month with data. Label shows just the month name ("October"), or "Month Year" if the couple's history spans more than one calendar year.
 
 ### Empty State
 **Role:** Log screen when no expenses exist yet
@@ -589,12 +589,11 @@ them:
 | App Pattern | shadcn primitive |
 |---|---|
 | Primary/Secondary Button | `Button` (`default`/`secondary`/`ghost`/`outline` variants) |
-| Bottom Toolbar (Add/Filter/Month) | `Button` (`size="icon"` + default variant, default square radius) + `Select` (colors overridden to match), positioned by an app-owned fixed wrapper |
+| Bottom Toolbar (Add/Filter/Month) | `Button` (`size="icon"` + default variant, default square radius), positioned by an app-owned fixed wrapper |
 | Form Field / Input | `Input` + `Label` |
 | OTP Code Input | `InputOTP` |
-| Bottom Sheet (add/edit expense) | `Sheet` (`side="bottom"`) |
-| Category Chip Grid, Filter Drawer | `Chip` (`src/components/ui/chip.tsx`) — app-owned, built on Radix `Toggle`; shadcn has no built-in chip |
-| Month Dropdown | `Select` |
+| Bottom Sheet (add/edit expense), Filter Drawer, Month Drawer | `Sheet` (`side="bottom"`) |
+| Category Chip Grid, Filter Drawer, Month Drawer | `Chip` (`src/components/ui/chip.tsx`) — app-owned, built on Radix `Toggle`; shadcn has no built-in chip |
 | Delete confirmation (expense row) | `Dialog` |
 | Mode Switcher (Create/Join) | `Tabs`, styled as a segmented control |
 | Toast/Snackbar | `Sonner` (`<Toaster />` mounted once at the app root) |
