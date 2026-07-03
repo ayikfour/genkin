@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
+import { materializeDueRecurringExpenses } from '../lib/recurringExpenses'
 
 interface CoupleInfo {
   couple_id: string
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [couple, setCouple] = useState<CoupleInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const materializedForCoupleId = useRef<string | null>(null)
 
   async function fetchCouple(userId: string) {
     const { data } = await supabase
@@ -52,6 +54,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  // Runs once per couple per session — there's no scheduled-job infra in
+  // this app, so recurring expenses are materialized lazily whenever
+  // someone opens it. See src/lib/recurringExpenses.ts.
+  useEffect(() => {
+    if (!couple?.couple_id || materializedForCoupleId.current === couple.couple_id) return
+    materializedForCoupleId.current = couple.couple_id
+    materializeDueRecurringExpenses(couple.couple_id)
+  }, [couple?.couple_id])
 
   async function signOut() {
     await supabase.auth.signOut()

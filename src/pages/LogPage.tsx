@@ -6,10 +6,12 @@ import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
+import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { FilterDrawer } from '../components/FilterDrawer'
 import { MonthDrawer } from '../components/MonthDrawer'
 import { ExpenseRow } from '../components/ExpenseRow'
+import { UpcomingRecurring } from '../components/UpcomingRecurring'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Expense } from '../types'
@@ -31,6 +33,7 @@ export function LogPage() {
   const { expenses, loading, refetch } = useExpenses(couple?.couple_id)
   const categories = useCategories()
   const members = useCoupleMembers(couple?.couple_id)
+  const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
 
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterPaidBy, setFilterPaidBy] = useState<string | null>(null)
@@ -44,6 +47,7 @@ export function LogPage() {
 
   function handleSaved(action: 'added' | 'updated' | 'deleted') {
     refetch()
+    refetchRecurring()
     toast(TOAST_COPY[action])
   }
 
@@ -97,6 +101,13 @@ export function LogPage() {
   return (
     <>
       <div className="pb-24">
+        <UpcomingRecurring
+          recurringExpenses={recurringExpenses}
+          categories={categories}
+          currencyCode={couple?.currency_code}
+          onStopped={refetchRecurring}
+        />
+
         {/* Content */}
         {loading ? (
           <div className="flex justify-center pt-16">
@@ -195,6 +206,7 @@ export function LogPage() {
         expense={editingExpense}
         categories={categories}
         members={members}
+        recurringExpenses={recurringExpenses}
       />
 
       <FilterDrawer

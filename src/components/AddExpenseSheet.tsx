@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { CaretRight, CaretDown } from '@phosphor-icons/react'
+import { CaretRight, CaretDown, Check } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { formatDateLabel } from '../lib/format'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
-import type { Expense, Category, CoupleMember } from '../types'
+import { parseISODateLocal, toISODateLocal, nextOccurrence } from '../lib/dates'
+import type { Expense, Category, CoupleMember, RecurrenceFrequency, RecurringExpense } from '../types'
 import {
   Sheet,
   SheetContent,
@@ -24,6 +25,7 @@ interface Props {
   expense?: Expense | null
   categories: Category[]
   members: CoupleMember[]
+  recurringExpenses: RecurringExpense[]
 }
 
 // Shared look for the two segments of the combined date/payer control below
@@ -39,20 +41,13 @@ function formatAmount(raw: string): string {
   return decPart !== undefined ? `${grouped}.${decPart}` : grouped
 }
 
-// expense_date is stored as a plain YYYY-MM-DD string. Parse/format at local
-// noon/local Y-M-D (not toISOString, which is UTC-based) so the date can't
-// shift by a day depending on the viewer's timezone offset.
-function parseISODateLocal(iso: string): Date {
-  return new Date(iso + 'T12:00:00')
-}
-function toISODateLocal(d: Date): string {
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string }[] = [
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+]
 
-export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories, members }: Props) {
+export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories, members, recurringExpenses }: Props) {
   const { user, couple } = useAuth()
   const isEdit = !!expense
 
@@ -61,11 +56,19 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
   const [paidBy, setPaidBy] = useState(user?.id ?? '')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>('monthly')
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
+
+  // Once an expense is linked to a recurring series, editing the frequency
+  // or turning it off happens from the Upcoming list on the Log page, not
+  // here — avoids building this-vs-all-future edit semantics for the series.
+  const alreadyLinked = !!expense?.recurring_expense_id
+  const linkedTemplate = recurringExpenses.find(r => r.id === expense?.recurring_expense_id)
 
   useEffect(() => {
     if (!isOpen) return
@@ -82,6 +85,8 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       setDate(new Date().toISOString().split('T')[0])
       setPaidBy(user?.id ?? '')
     }
+    setIsRecurring(false)
+    setFrequency('monthly')
     setCategoryPickerOpen(false)
     setDatePickerOpen(false)
     setError('')
@@ -95,6 +100,29 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
     if (!category) { setError('Select a category'); return }
     setSaving(true); setError('')
 
+    let recurringExpenseId = expense?.recurring_expense_id ?? null
+
+    if (isRecurring && !alreadyLinked) {
+      const { data: template, error: templateErr } = await supabase
+        .from('recurring_expenses')
+        .insert({
+          couple_id: couple!.couple_id,
+          paid_by: paidBy,
+          created_by: user!.id,
+          amount: amt,
+          category,
+          description: description.trim(),
+          frequency,
+          start_date: date,
+          next_due_date: nextOccurrence(date, frequency),
+        })
+        .select()
+        .single()
+
+      if (templateErr) { setError(templateErr.message); setSaving(false); return }
+      recurringExpenseId = template.id
+    }
+
     const payload = {
       couple_id: couple!.couple_id,
       paid_by: paidBy,
@@ -103,6 +131,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       category,
       description: description.trim(),
       expense_date: date,
+      recurring_expense_id: recurringExpenseId,
     }
 
     const { error: err } = isEdit
@@ -225,6 +254,35 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
               onChange={e => setDescription(e.target.value)}
               className="h-12"
             />
+
+            {/* Recurring */}
+            {alreadyLinked ? (
+              <p className="text-xs text-muted-foreground">
+                🔁 {linkedTemplate ? `Recurring · ${FREQUENCY_OPTIONS.find(f => f.value === linkedTemplate.frequency)?.label}` : 'Part of a recurring series'}
+                {' — manage this from Upcoming on the Log page.'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <Chip pressed={isRecurring} onPressedChange={setIsRecurring}>
+                  🔁 Recurring
+                </Chip>
+                {isRecurring && (
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    {FREQUENCY_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFrequency(opt.value)}
+                        className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
+                      >
+                        {opt.label}
+                        {frequency === opt.value && <Check className="size-4" weight="bold" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Category + Save */}
             <div className="flex items-center gap-2">

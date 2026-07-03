@@ -38,7 +38,12 @@ export function useExpenses(coupleId: string | undefined) {
     const channel = supabase
       .channel(`expenses-${coupleId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' },
-        ({ new: row }) => { if (mounted) setExpenses(p => [row as Expense, ...p].sort(sortDesc)) })
+        ({ new: row }) => {
+          // Mutations already call refetch() right after they resolve, which can
+          // land before or after this event — dedupe by id so a fast refetch
+          // followed by this event (or vice versa) never renders the row twice.
+          if (mounted) setExpenses(p => p.some(e => e.id === (row as Expense).id) ? p : [row as Expense, ...p].sort(sortDesc))
+        })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'expenses' },
         ({ new: row }) => { if (mounted) setExpenses(p => p.map(e => e.id === (row as Expense).id ? row as Expense : e)) })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'expenses' },

@@ -355,6 +355,23 @@ primary. The "Split" feature (the old evenly-split-expense toggle, its
 removed entirely — not just hidden from the UI. There is no split state to
 track in this form anymore.
 
+**Recurring toggle:** sits between the description field and the
+category/save row, and only appears when the expense isn't already part of a
+recurring series (a brand-new expense, or an existing one-off being edited
+retroactively). It's a single `Chip` labeled "🔁 Recurring" — reusing the same
+pill primitive as the Category Chip Grid rather than introducing a new
+toggle/switch component. Pressing it reveals a Weekly/Monthly/Yearly picker
+directly underneath, using the same bordered/divided row-list pattern as the
+Filter Drawer (`rounded-lg border border-border`, rows with `border-b
+border-border last:border-b-0`, `px-4 py-3.5`, trailing `Check` when
+selected) rather than a second `Chip` row — single-select, no
+Reset/Apply footer, since it's local to this one field. If the expense being
+edited is already linked to an active series, this whole control is replaced
+by a static muted line ("🔁 Recurring · Monthly — manage this from Upcoming
+on the Log page") — editing or stopping an existing series only happens from
+the Upcoming list, not from an individual generated expense, to avoid
+this-vs-all-future edit ambiguity.
+
 **Date picker:** the date segment opens a `Popover` + `Calendar` (shadcn
 primitives, added via `shadcn add popover calendar` — pulls in `react-day-picker`
 and `date-fns` as new dependencies, both free/client-side, no cost concern).
@@ -403,6 +420,11 @@ Same `Sheet` + vertical list pattern as the Filter Drawer above (not a native `S
 **Role:** Currency picker on the Settings screen, changes the couple-level currency used to format every amount in the app
 
 Same `Sheet` + vertical list pattern as the Month Drawer above — single-select, no Reset/Apply footer, tapping a row applies it and closes the sheet immediately (a couple-level setting change, not a staged/local one). The trigger is a Settings `Card` row (`rounded-lg bg-muted px-4 py-3.5`, matching the invite-code row style) showing the current currency as `{symbol} {name}`, with a trailing `CaretRight`. The list itself shows `{symbol} · {name}` per row (e.g. "Rp · Indonesian Rupiah") for a fixed set of currencies (see `src/lib/currencies.ts`), defaulting to Indonesian Rupiah. Selecting a currency updates `couples.currency_code` and is immediately visible to both members of the couple.
+
+### Upcoming Recurring List
+**Role:** Shows active recurring expenses and their next occurrence, above the grouped expense list on the Log screen
+
+Only renders when at least one recurring expense is active (nothing shown otherwise). Same bordered/divided row-list pattern as the Filter Drawer, under the same small uppercase label style ("UPCOMING") used for date-group headers in the log below it. Each row: category icon + description/category name on the left, amount and "{Weekly/Monthly/Yearly} · next {date}" (via the same `formatDateLabel` used throughout) stacked on the right. There is no recurring-specific badge system elsewhere in the app — an expense generated from a series looks identical to a manually logged one in the grouped list below. Tapping a row opens the same confirmation `Dialog` pattern as deleting an expense (`LogPage.tsx`'s delete dialog) — "Stop this recurring expense?" / Cancel / destructive "Stop" — which sets the series inactive; it does not delete or affect any expenses already logged from it. There's no edit action here in v1 — changing amount/frequency means stopping the series and starting a new one.
 
 ### Empty State
 **Role:** Log screen when no expenses exist yet
