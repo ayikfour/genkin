@@ -11,6 +11,7 @@ import { FilterDrawer } from '../components/FilterDrawer'
 import { MonthDrawer } from '../components/MonthDrawer'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { formatCurrency, formatDateLabel } from '../lib/format'
+import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Expense } from '../types'
 import { Button } from '@/components/ui/button'
 import {
@@ -128,7 +129,7 @@ export function LogPage() {
                     {formatDateLabel(date)}
                   </span>
                   <span className="font-heading text-xs text-muted-foreground">
-                    {formatCurrency(items.reduce((s, e) => s + e.amount, 0))}
+                    {formatCurrency(items.reduce((s, e) => s + e.amount, 0), couple?.currency_code)}
                   </span>
                 </div>
 
@@ -144,6 +145,7 @@ export function LogPage() {
                         expense={expense}
                         categoryIcon={catIcons[expense.category] ?? '📦'}
                         payerLabel={payerLabel}
+                        currencyCode={couple?.currency_code ?? DEFAULT_CURRENCY_CODE}
                         isOpen={openSwipeRowId === expense.id}
                         onOpenChange={open => setOpenSwipeRowId(open ? expense.id : null)}
                         onEdit={() => openEdit(expense)}
@@ -213,7 +215,7 @@ export function LogPage() {
             <DialogDescription>
               {deletingExpense && (
                 <>
-                  {deletingExpense.description || deletingExpense.category} · {formatCurrency(deletingExpense.amount)}
+                  {deletingExpense.description || deletingExpense.category} · {formatCurrency(deletingExpense.amount, couple?.currency_code)}
                   <br />
                   This can't be undone, and removes it from your partner's log too.
                 </>

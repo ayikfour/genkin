@@ -3,6 +3,7 @@ import { CaretRight, CaretDown } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { formatDateLabel } from '../lib/format'
+import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Expense, Category, CoupleMember } from '../types'
 import {
   Sheet,
@@ -196,7 +197,10 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
             </div>
 
             {/* Amount */}
-            <div className="py-6 text-center">
+            <div className="flex items-center justify-center gap-2 py-6">
+              <span className="font-heading text-2xl font-medium text-muted-foreground">
+                {getCurrency(couple?.currency_code ?? DEFAULT_CURRENCY_CODE).symbol}
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -206,7 +210,8 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                   const raw = e.target.value.replace(/,/g, '')
                   if (/^\d*\.?\d*$/.test(raw)) setAmount(raw)
                 }}
-                className="font-heading w-full border-none bg-transparent text-center text-5xl font-medium text-foreground outline-none"
+                size={Math.max(formatAmount(amount).length, 4)}
+                className="font-heading max-w-full flex-none border-none bg-transparent text-center text-5xl font-medium text-foreground outline-none"
               />
             </div>
 

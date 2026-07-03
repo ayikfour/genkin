@@ -259,7 +259,9 @@ Full-width tappable row, 64px min-height, horizontal padding 20px, vertical padd
 ### Amount Display
 **Role:** Numeric money values throughout the app
 
-Always Geist font, `font-variant-numeric: tabular-nums`, weight 500. List row amounts: 16px. Form input amounts: 32px centered. No currency symbol in the UI for now — single currency assumed per PRD. Neutral expense amounts: `--color-bone` (#e5e5e5).
+Always Geist font, `font-variant-numeric: tabular-nums`, weight 500. List row amounts: 16px. Form input amounts: 32px centered. Neutral expense amounts: `--color-bone` (#e5e5e5).
+
+Every amount is prefixed with the couple's selected currency symbol (`Rp`, `$`, `€`, …), set via the Currency Drawer on Settings (see below) and defaulting to Indonesian Rupiah. Formatting (decimal places, thousands/decimal separator) is per-currency, not a single global style — e.g. Rupiah renders with no decimals and a period thousands-separator (`Rp 150.000`), while USD/EUR render with 2 decimals and a comma thousands-separator (`$ 150.00`). See `src/lib/currencies.ts` for the per-currency formatting table and `formatCurrency()` in `src/lib/format.ts` for the formatter.
 
 ### Bottom Toolbar (Log screen)
 **Role:** Add action + list filtering, fixed to the bottom of the Log screen
@@ -396,6 +398,11 @@ Bottom `Sheet` (same primitive/pattern as the Add/Edit Expense sheet — a sibli
 **Role:** Filter the Log screen to a single month, shown next to the Filter button
 
 Same `Sheet` + vertical list pattern as the Filter Drawer above (not a native `Select`, and not `Chip`/pill rows either — both were tried and dropped for the same readability reason). The trigger is a plain `Button` (`h-12 px-4`, trailing `CaretDown`) showing the current month; tapping it opens a bottom `Sheet` titled "Month" containing the same bordered/divided row-list component as the Filter Drawer, one row per available month — tapping a row selects it and closes the sheet immediately (single-select, no Reset/Apply footer — picking a month is a direct action, not a staged one). Options are generated dynamically from the distinct months present in the couple's `expense_date` values (not a static calendar list) — sorted most-recent-first, defaulting to the most recent month with data. Label shows just the month name ("October"), or "Month Year" if the couple's history spans more than one calendar year.
+
+### Currency Drawer
+**Role:** Currency picker on the Settings screen, changes the couple-level currency used to format every amount in the app
+
+Same `Sheet` + vertical list pattern as the Month Drawer above — single-select, no Reset/Apply footer, tapping a row applies it and closes the sheet immediately (a couple-level setting change, not a staged/local one). The trigger is a Settings `Card` row (`rounded-lg bg-muted px-4 py-3.5`, matching the invite-code row style) showing the current currency as `{symbol} {name}`, with a trailing `CaretRight`. The list itself shows `{symbol} · {name}` per row (e.g. "Rp · Indonesian Rupiah") for a fixed set of currencies (see `src/lib/currencies.ts`), defaulting to Indonesian Rupiah. Selecting a currency updates `couples.currency_code` and is immediately visible to both members of the couple.
 
 ### Empty State
 **Role:** Log screen when no expenses exist yet

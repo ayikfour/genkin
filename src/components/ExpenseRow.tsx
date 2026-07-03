@@ -10,6 +10,7 @@ interface Props {
   expense: Expense
   categoryIcon: string
   payerLabel: string
+  currencyCode: string
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   onEdit: () => void
@@ -28,6 +29,7 @@ export function ExpenseRow({
   expense,
   categoryIcon,
   payerLabel,
+  currencyCode,
   isOpen,
   onOpenChange,
   onEdit,
@@ -126,7 +128,7 @@ export function ExpenseRow({
 
         {/* Amount */}
         <span className="font-heading shrink-0 text-base font-medium text-foreground">
-          {formatCurrency(expense.amount)}
+          {formatCurrency(expense.amount, currencyCode)}
         </span>
       </div>
     </div>

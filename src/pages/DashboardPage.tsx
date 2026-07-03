@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
 import { formatCurrency } from '../lib/format'
+import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { categoryColor } from '../lib/categoryColors'
 import { Card } from '@/components/ui/card'
 
@@ -15,12 +16,12 @@ function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1)
 }
 
-function TooltipBox({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+function TooltipBox({ active, payload, label, currencyCode }: { active?: boolean; payload?: Array<{ value: number }>; label?: string; currencyCode: string }) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 text-sm text-popover-foreground">
       <div className="mb-0.5 text-muted-foreground">{label}</div>
-      <div className="font-heading">{formatCurrency(payload[0].value)}</div>
+      <div className="font-heading">{formatCurrency(payload[0].value, currencyCode)}</div>
     </div>
   )
 }
@@ -82,6 +83,7 @@ export function DashboardPage() {
   const partnerTotal = partner ? (paidByTotals.get(partner.user_id) ?? 0) : 0
   const splitTotal = youTotal + partnerTotal
   const youPct = splitTotal > 0 ? (youTotal / splitTotal) * 100 : 50
+  const currencyCode = couple?.currency_code ?? DEFAULT_CURRENCY_CODE
 
   return (
     <div className="flex flex-col gap-4 px-5 pt-2 pb-6">
@@ -93,7 +95,7 @@ export function DashboardPage() {
               This month
             </p>
             <p className="font-heading text-3xl font-medium text-foreground">
-              {formatCurrency(monthlyTotal)}
+              {formatCurrency(monthlyTotal, currencyCode)}
             </p>
           </div>
           {momPercent !== null && (
@@ -122,7 +124,7 @@ export function DashboardPage() {
                 axisLine={{ stroke: 'var(--border)' }}
                 tickLine={false}
               />
-              <Tooltip content={<TooltipBox />} cursor={{ fill: 'var(--muted)' }} />
+              <Tooltip content={<TooltipBox currencyCode={currencyCode} />} cursor={{ fill: 'var(--muted)' }} />
               <Bar dataKey="total" fill="var(--muted-foreground)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -142,7 +144,7 @@ export function DashboardPage() {
                   <Pie data={categoryBreakdown} dataKey="value" nameKey="name" innerRadius={42} outerRadius={64} paddingAngle={2} stroke="none">
                     {categoryBreakdown.map(c => <Cell key={c.name} fill={categoryColor(c.name)} />)}
                   </Pie>
-                  <Tooltip content={<TooltipBox />} />
+                  <Tooltip content={<TooltipBox currencyCode={currencyCode} />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -151,7 +153,7 @@ export function DashboardPage() {
                 <div key={c.name} className="flex items-center gap-2 text-xs">
                   <span className="size-2 shrink-0 rounded-full" style={{ background: categoryColor(c.name) }} />
                   <span className="flex-1 truncate text-muted-foreground">{c.name}</span>
-                  <span className="font-heading text-foreground">{formatCurrency(c.value)}</span>
+                  <span className="font-heading text-foreground">{formatCurrency(c.value, currencyCode)}</span>
                 </div>
               ))}
             </div>
@@ -167,8 +169,8 @@ export function DashboardPage() {
         ) : (
           <div className="mt-3.5">
             <div className="mb-2 flex justify-between text-xs">
-              <span className="font-medium text-foreground">You · {formatCurrency(youTotal)}</span>
-              <span className="font-medium text-muted-foreground">{partner?.display_name ?? 'Partner'} · {formatCurrency(partnerTotal)}</span>
+              <span className="font-medium text-foreground">You · {formatCurrency(youTotal, currencyCode)}</span>
+              <span className="font-medium text-muted-foreground">{partner?.display_name ?? 'Partner'} · {formatCurrency(partnerTotal, currencyCode)}</span>
             </div>
             <div className="flex h-2 overflow-hidden rounded-full bg-muted">
               <div className="bg-foreground" style={{ width: `${youPct}%` }} />

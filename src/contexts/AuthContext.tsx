@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 
 interface CoupleInfo {
   couple_id: string
   display_name: string
+  currency_code: string
 }
 
 interface AuthContextValue {
@@ -26,10 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function fetchCouple(userId: string) {
     const { data } = await supabase
       .from('couple_members')
-      .select('couple_id, display_name')
+      .select('couple_id, display_name, couples(currency_code)')
       .eq('user_id', userId)
       .maybeSingle()
-    setCouple(data ?? null)
+    if (!data) { setCouple(null); return }
+    const couples = data.couples as { currency_code: string } | { currency_code: string }[] | null
+    const currency_code = (Array.isArray(couples) ? couples[0]?.currency_code : couples?.currency_code) ?? DEFAULT_CURRENCY_CODE
+    setCouple({ couple_id: data.couple_id, display_name: data.display_name, currency_code })
   }
 
   useEffect(() => {

@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import { getCurrency } from '../lib/currencies'
+import { CurrencyDrawer } from '../components/CurrencyDrawer'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Check, Copy } from '@phosphor-icons/react'
+import { Check, CaretRight, Copy } from '@phosphor-icons/react'
 
 export function SettingsPage() {
-  const { user, couple, signOut } = useAuth()
+  const { user, couple, refreshCouple, signOut } = useAuth()
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
 
   useEffect(() => {
     if (!couple) return
@@ -27,6 +31,20 @@ export function SettingsPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function selectCurrency(code: string) {
+    if (!couple) return
+    const { data, error } = await supabase
+      .from('couples')
+      .update({ currency_code: code })
+      .eq('id', couple.couple_id)
+      .select()
+    if (error || !data?.length) {
+      toast('Could not update currency')
+      return
+    }
+    await refreshCouple()
+  }
+
   return (
     <div className="space-y-5 p-6">
       {/* Account */}
@@ -41,6 +59,27 @@ export function SettingsPage() {
           </p>
         )}
       </Card>
+
+      {/* Currency */}
+      {couple && (
+        <Card className="space-y-3 p-5">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Currency
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Amounts across the app are shown in this currency.
+          </p>
+          <button
+            onClick={() => setCurrencyDrawerOpen(true)}
+            className="flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3.5 text-left"
+          >
+            <span className="text-base text-foreground">
+              {getCurrency(couple.currency_code).symbol} {getCurrency(couple.currency_code).name}
+            </span>
+            <CaretRight className="size-3.5 text-muted-foreground" />
+          </button>
+        </Card>
+      )}
 
       {/* Invite code */}
       {couple && (
@@ -78,6 +117,15 @@ export function SettingsPage() {
       <Button onClick={signOut} variant="secondary" className="w-full">
         Sign out
       </Button>
+
+      {couple && (
+        <CurrencyDrawer
+          isOpen={currencyDrawerOpen}
+          onClose={() => setCurrencyDrawerOpen(false)}
+          selectedCode={couple.currency_code}
+          onSelect={selectCurrency}
+        />
+      )}
     </div>
   )
 }
