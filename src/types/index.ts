@@ -1,7 +1,8 @@
 export interface Expense {
   id: string
   couple_id: string
-  paid_by: string
+  paid_by: string | null
+  paid_by_label: string | null
   logged_by: string
   amount: number
   category: string

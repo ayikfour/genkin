@@ -73,8 +73,8 @@ expenses
   created_at
 
 categories
-  id, name, icon   -- seeded: Groceries, Food & Drink, Transport,
-                       Rent/Bills, Entertainment, Health, Shopping, Other
+  id, name, icon   -- seeded: Groceries, Snack, Food, Services, Coffee,
+                       Commute, Cat, Lend, Health, Laundry
                        (RLS disabled — read-only reference data, same for
                        all users, no per-couple scoping needed)
 ```

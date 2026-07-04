@@ -529,18 +529,20 @@ Glass surface (`--color-char` background, 1px hairline border, `--radius-card`),
 ### Category Color Palette
 **Role:** Distinguishing categories in the Dashboard's category breakdown donut — the only place beyond Success/Danger where multiple chromatic colors appear together
 
-A fixed, muted 8-color set — one per seeded category, desaturated enough to sit comfortably on the dark canvas without competing with indigo:
+A fixed, muted 10-color set — one per seeded category, desaturated enough to sit comfortably on the dark canvas without competing with indigo:
 
 | Category | Color |
 |---|---|
 | Groceries | `#f0a868` (muted amber) |
-| Food & Drink | `#e8847c` (muted coral) |
-| Transport | `#6ba3d6` (muted blue) |
-| Rent/Bills | `#9b8cd9` (muted violet) |
-| Entertainment | `#e0a8d8` (muted pink) |
-| Health | `#7bc9a8` (muted teal) |
-| Shopping | `#d6c178` (muted gold) |
-| Other | `#8a8a8a` (neutral gray) |
+| Snack | `#e0a8d8` (muted pink) |
+| Food | `#e8847c` (muted coral) |
+| Services | `#9b8cd9` (muted violet) |
+| Coffee | `#c9976b` (muted tan) |
+| Commute | `#6ba3d6` (muted blue) |
+| Cat | `#d6c178` (muted gold) |
+| Lend | `#7bc9a8` (muted teal) |
+| Health | `#8fd3c7` (muted mint) |
+| Laundry | `#a8b8c9` (muted blue-gray) |
 
 Used only for chart fills/legends (donut segments, legend dots) — never for buttons, badges, or backgrounds elsewhere in the app.
 

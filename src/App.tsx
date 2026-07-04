@@ -8,6 +8,7 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { LogPage } from './pages/LogPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { ImportPage } from './pages/ImportPage'
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -42,6 +43,10 @@ export default function App() {
           <Route
             path="/settings"
             element={<ProtectedRoute><AppShell><SettingsPage /></AppShell></ProtectedRoute>}
+          />
+          <Route
+            path="/import"
+            element={<ProtectedRoute><AppShell><ImportPage /></AppShell></ProtectedRoute>}
           />
           <Route path="*" element={<Navigate to="/log" replace />} />
         </Routes>

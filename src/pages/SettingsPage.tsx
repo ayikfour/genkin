@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Check, CaretRight, Copy } from '@phosphor-icons/react'
 
 export function SettingsPage() {
+  const navigate = useNavigate()
   const { user, couple, refreshCouple, signOut } = useAuth()
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -183,6 +185,25 @@ export function SettingsPage() {
               )}
             </button>
           </div>
+        </Card>
+      )}
+
+      {/* Import */}
+      {couple && (
+        <Card className="space-y-3 p-5">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Import
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Load expenses in bulk from a CSV export of a spreadsheet.
+          </p>
+          <button
+            onClick={() => navigate('/import')}
+            className="flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3.5 text-left"
+          >
+            <span className="text-base text-foreground">Import expenses</span>
+            <CaretRight className="size-3.5 text-muted-foreground" />
+          </button>
         </Card>
       )}
 

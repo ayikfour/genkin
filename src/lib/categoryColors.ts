@@ -1,14 +1,18 @@
 export const CATEGORY_COLORS: Record<string, string> = {
   'Groceries': '#f0a868',
-  'Food & Drink': '#e8847c',
-  'Transport': '#6ba3d6',
-  'Rent/Bills': '#9b8cd9',
-  'Entertainment': '#e0a8d8',
-  'Health': '#7bc9a8',
-  'Shopping': '#d6c178',
-  'Other': '#8a8a8a',
+  'Snack': '#e0a8d8',
+  'Food': '#e8847c',
+  'Services': '#9b8cd9',
+  'Coffee': '#c9976b',
+  'Commute': '#6ba3d6',
+  'Cat': '#d6c178',
+  'Lend': '#7bc9a8',
+  'Health': '#8fd3c7',
+  'Laundry': '#a8b8c9',
 }
 
+const FALLBACK_COLOR = '#8a8a8a'
+
 export function categoryColor(name: string): string {
-  return CATEGORY_COLORS[name] ?? CATEGORY_COLORS['Other']
+  return CATEGORY_COLORS[name] ?? FALLBACK_COLOR
 }

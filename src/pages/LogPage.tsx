@@ -148,7 +148,11 @@ export function LogPage() {
                 <div className="mb-1">
                   {items.map((expense, i) => {
                     const payer = members.find(m => m.user_id === expense.paid_by)
-                    const payerLabel = expense.paid_by === user?.id ? 'You' : (payer?.display_name ?? 'Partner')
+                    const payerLabel = expense.paid_by === user?.id
+                      ? 'You'
+                      : expense.paid_by
+                        ? (payer?.display_name ?? 'Partner')
+                        : (expense.paid_by_label ?? 'Partner')
 
                     return (
                       <ExpenseRow
