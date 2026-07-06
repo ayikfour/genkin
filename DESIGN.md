@@ -532,15 +532,24 @@ Wraps the standard Form Field/Input pattern above (same 48px height, `#1d1d1d` b
 
 Glass surface (`--color-char` background, 1px hairline border, `--radius-card`), padding 20px. Header row: title (DM Sans 15px weight 500, `--color-bone`) with an optional right-aligned stat or delta badge. Chart fills the remaining width, fixed height (160–220px depending on chart type) so cards stack predictably. Axis labels and gridlines stay muted (`--color-graphite`/`--color-fog`, never full white) so the data itself — not chrome — carries the color. Tooltips reuse the glass treatment (blurred dark pill, hairline border).
 
-### Budget Card
-**Role:** First card on the Dashboard/Stats screen — per-person monthly budget vs. spend for the current calendar month
+### This Month + Budget Card
+**Role:** First card on the Dashboard/Stats screen and, in a compact form, the tappable overview card at the top of the Log screen — this calendar month's total spend plus per-person budget vs. spend
 
-Same `Card` container as the other Dashboard cards (`p-5`). Header row: title ("Budget — this month") left, a right-aligned remaining/over-budget badge (`text-xs font-medium`, `--color-success` when under budget, `--color-danger` when over — the same binary tones as the MoM delta indicator, no third/warning color). Below that, a progress bar reusing the "Who Paid" split bar's mechanics (`h-2 rounded-full bg-muted` track, a single filled segment sized to `min(spent/budget, 100%)`) — filled segment colored `--color-success`/`--color-danger` to match the badge, rather than the neutral `bg-foreground` the Who Paid bar uses, since this bar communicates good/bad rather than a neutral split. A three-column stat row (`grid-cols-3`, 12px labels + Geist tabular-nums values) shows Remaining · Days left · Daily pace (the budget-safe amount left to spend per remaining day; renders `—` once over budget or on the month's last day, rather than a misleading number). An optional single line below projects month-end total at the current daily pace (only once `dayOfMonth > 2`, to avoid a wild projection from a day or two of data), colored `--color-danger` if the projection exceeds the budget. A hairline-divided footer (`border-t border-border pt-3`) lists each partner's name with `spent / budget` as plain text, no per-person bar — the shared bar above already carries the couple-level visual, individual rows just need the numbers.
+One `Card` (`p-5`), not two: the top section is the plain monthly total (title "This month", big Geist number, right-aligned MoM delta badge — `--color-danger` if spending increased, `--color-success` if it decreased, same binary tones used throughout). A `border-t border-border pt-3` divider separates that from the budget section below it — budget context is a continuation of "this month," not a competing metric, so it doesn't get its own card or its own big number.
 
-**Empty state:** if neither partner has set a budget yet (`budgetTotal === 0`), the card collapses to a single sentence ("Set a monthly budget in Settings to track it here") plus a text link to `/settings` — never a zeroed-out bar or `Rp 0 left`, which would read as an actual budget of zero rather than "not set up yet."
+Budget section header row: title ("Budget") left, a right-aligned remaining/over-budget badge (`text-xs font-medium`, `--color-success`/`--color-danger`, no third/warning tone). Below that, the **Segmented Progress Bar** (see below) instead of a continuous bar. A three-column stat row (`grid-cols-3`, 12px labels + Geist tabular-nums values) shows Remaining · Days left · Daily pace (the budget-safe amount left to spend per remaining day; renders `—` once over budget or on the month's last day). An optional single line projects month-end total at the current daily pace (only once `dayOfMonth > 2`, to avoid a wild projection from a day or two of data), colored `--color-danger` if the projection exceeds the budget. A second hairline-divided footer (`border-t border-border pt-3`) lists each partner's name with `spent / budget` as plain text, no per-person bar.
+
+**Empty state:** if neither partner has set a budget yet (`budgetTotal === 0`), the divider still separates the sections, but the budget half collapses to a single sentence ("Set a monthly budget in Settings to track it here") plus a text link to `/settings` — never a zeroed-out bar or `Rp 0 left`.
+
+**Log screen variant (`LogPage.tsx`):** a shrunk, tappable version of just the budget half — no MoM section, no per-person footer, no projection line. One row (`{spent} spent` left, remaining/over-budget badge right) plus the same Segmented Progress Bar at `segments={12}` instead of the Dashboard's default 20 (narrower visual weight for a card that's a secondary affordance, not the main content of the screen). The whole `Card` is one tap target (`role="button"`, `cursor-pointer`) that navigates to `/dashboard` — same "whole row/card is tappable" convention as Settings' Currency/Invite/Import rows. Pre-budget, it collapses to a single line ("This month · {total}"), matching the Dashboard card's empty-state restraint.
+
+### Segmented Progress Bar
+**Role:** The budget-usage indicator on the This Month + Budget card (both the Dashboard and Log screen variants) — `BudgetProgressBar.tsx`
+
+A row of evenly-sized blocks (`flex gap-1`, each a `flex-1 h-2 rounded-[2px]`), not a single continuous fill — visually distinct from the Who Paid and category bars below, which stay continuous/proportional. Filled-block count = `round(usedPct / 100 * segments)` (default 20 segments on Dashboard, 12 on the Log screen's smaller card); filled blocks are `--color-success` or `--color-danger` (matching the remaining/over-budget badge next to it), unfilled blocks are `bg-muted`. No new color — same binary success/danger convention used everywhere else on this card.
 
 ### Category Color Palette
-**Role:** Distinguishing categories in the Dashboard's category breakdown donut — the only place beyond Success/Danger where multiple chromatic colors appear together
+**Role:** Distinguishing categories in the Dashboard's category breakdown bar — the only place beyond Success/Danger where multiple chromatic colors appear together
 
 A fixed, muted 10-color set — one per seeded category, desaturated enough to sit comfortably on the dark canvas without competing with indigo:
 
@@ -557,7 +566,7 @@ A fixed, muted 10-color set — one per seeded category, desaturated enough to s
 | Health | `#8fd3c7` (muted mint) |
 | Laundry | `#a8b8c9` (muted blue-gray) |
 
-Used only for chart fills/legends (donut segments, legend dots) — never for buttons, badges, or backgrounds elsewhere in the app.
+Used only for chart fills/legends (category bar segments, legend dots) — never for buttons, badges, or backgrounds elsewhere in the app.
 
 ---
 
@@ -712,6 +721,7 @@ them:
 | Mode Switcher (Create/Join; Password/Email code) | `Tabs`, styled as a segmented control |
 | Toast/Snackbar | `Sonner` (`<Toaster />` mounted once at the app root) |
 | Chart Card (Dashboard) | `Card` wrapping the existing Recharts charts |
+| Segmented Progress Bar (budget usage) | app-owned `BudgetProgressBar.tsx`, no shadcn equivalent (plain flex row of divs, not the shadcn `Progress` primitive, to match the blocky reference style rather than a continuous fill) |
 | Invite Code Display | `Input` (readOnly) + icon `Button` (copy), composed manually |
 | Password Input | `Input` + icon `Button` (`variant="ghost" size="icon-sm"`) with Phosphor `Eye`/`EyeSlash`, composed inside the input |
 | Empty State | `Card` + `Button`, composed manually |

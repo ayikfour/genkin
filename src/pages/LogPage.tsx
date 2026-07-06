@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, X, Receipt, SpinnerGap, CaretDown } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
@@ -7,15 +8,19 @@ import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
+import { useBudgets } from '../hooks/useBudgets'
+import { computeBudgetSummary } from '../lib/budgetSummary'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { FilterDrawer } from '../components/FilterDrawer'
 import { MonthDrawer } from '../components/MonthDrawer'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { UpcomingRecurring } from '../components/UpcomingRecurring'
+import { BudgetProgressBar } from '../components/BudgetProgressBar'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Expense } from '../types'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -35,11 +40,19 @@ const TOAST_COPY = { added: 'Expense added', updated: 'Expense updated', deleted
 const TOOLBAR_SOLID_HOVER = 'hover:bg-primary hover:brightness-90'
 
 export function LogPage() {
+  const navigate = useNavigate()
   const { user, couple } = useAuth()
   const { expenses, loading, refetch } = useExpenses(couple?.couple_id)
   const categories = useCategories()
   const members = useCoupleMembers(couple?.couple_id)
   const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
+  const { budgets } = useBudgets(couple?.couple_id)
+
+  const now = useMemo(() => new Date(), [])
+  const summary = useMemo(
+    () => computeBudgetSummary({ expenses, budgets, members, userId: user?.id, now }),
+    [expenses, budgets, members, user?.id, now],
+  )
 
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterPaidBy, setFilterPaidBy] = useState<string | null>(null)
@@ -138,6 +151,55 @@ export function LogPage() {
   return (
     <>
       <div className="pb-24">
+        <div className="px-5 pt-2">
+          <Card
+            className="cursor-pointer p-5"
+            role="button"
+            onClick={() => navigate('/dashboard')}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">Today</p>
+                <p className="font-heading text-3xl font-medium text-foreground">
+                  {formatCurrency(summary.todaySpent, couple?.currency_code)}
+                </p>
+              </div>
+              {summary.maxSpendToday !== null && (
+                <span
+                  className="mt-5 text-xs font-medium"
+                  style={{ color: summary.todayOverBudget ? 'var(--color-danger)' : 'var(--color-success)' }}
+                >
+                  {summary.todayOverBudget
+                    ? `Over by ${formatCurrency(Math.abs(summary.maxSpendToday - summary.todaySpent), couple?.currency_code)}`
+                    : `${formatCurrency(summary.maxSpendToday - summary.todaySpent, couple?.currency_code)} left today`}
+                </span>
+              )}
+            </div>
+
+            {summary.maxSpendToday !== null && (
+              <>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Max today: {formatCurrency(summary.maxSpendToday, couple?.currency_code)}
+                </p>
+                <div className="mt-2">
+                  <BudgetProgressBar usedPct={summary.todayUsedPct} overBudget={summary.todayOverBudget} />
+                </div>
+              </>
+            )}
+
+            <div className="mt-3 flex items-center justify-between text-xs">
+              <span className="font-medium text-foreground">
+                You · {formatCurrency(summary.youTodaySpent, couple?.currency_code)}
+              </span>
+              <span className="font-medium text-muted-foreground">
+                {summary.partner?.display_name ?? 'Partner'} · {formatCurrency(summary.partnerTodaySpent, couple?.currency_code)}
+              </span>
+            </div>
+
+            <p className="mt-3 text-xs font-medium text-muted-foreground">View all stats →</p>
+          </Card>
+        </div>
+
         <UpcomingRecurring
           recurringExpenses={recurringExpenses}
           categories={categories}
