@@ -456,10 +456,32 @@ Bottom `Sheet` (same primitive/pattern as the Add/Edit Expense sheet — a sibli
 
 Same `Sheet` + vertical list pattern as the Filter Drawer above (not a native `Select`, and not `Chip`/pill rows either — both were tried and dropped for the same readability reason). The trigger is a plain `Button` (`h-12 px-4`, trailing `CaretDown`) showing the current month; tapping it opens a bottom `Sheet` titled "Month" containing the same bordered/divided row-list component as the Filter Drawer, one row per available month — tapping a row selects it and closes the sheet immediately (single-select, no Reset/Apply footer — picking a month is a direct action, not a staged one). Options are generated dynamically from the distinct months present in the couple's `expense_date` values (not a static calendar list) — sorted most-recent-first, defaulting to the most recent month with data. Label shows just the month name ("October"), or "Month Year" if the couple's history spans more than one calendar year.
 
+### Settings Screen
+**Role:** Account, currency, budget, couple-invite, and import entry points, all on one screen (`SettingsPage.tsx`)
+
+Restyled from six separate `Card`s (one per section) to a single iOS-Settings-style grouped list — one `overflow-hidden rounded-lg border border-border` container holding every row, divided by `border-b border-border last:border-b-0` hairlines, each row `px-4 py-3.5` — the exact same container/row classes as the Filter Drawer, Month Drawer, and Category Picker row-lists above, reused here instead of introducing a new "settings row" pattern. No section headers or sub-grouping; it's one flat list, top to bottom: Account, Change password, Currency, Monthly budget, Invite code, Import expenses. Sign out stays outside the list as a full-width `secondary` `Button` below it, unchanged from before the relayout.
+
+Three row variants share the list:
+- **Navigable/editable row** (Change password, Currency, Monthly budget, Import expenses): the whole row is a `<button>`, label left (`text-base text-foreground`), and — when there's a current value worth surfacing (Currency's `{symbol} {name}`, Monthly budget's formatted amount) — that value in `text-muted-foreground text-sm` immediately before a trailing `CaretRight`. Change password and Import expenses have no value, just the chevron. Tapping opens the corresponding sheet/drawer (Change Password Sheet, Monthly Budget Sheet, Currency Drawer) or navigates (`/import`).
+- **Static row** (Account): a plain `<div>`, no chevron, two-line stack — email on line one, "Signed in as {display_name}" in muted text on line two (only when a couple exists).
+- **Static row with inline action** (Invite code): a plain `<div>`, no chevron, monospace code (`font-heading`, `tracking-[0.15em]`) on the right paired with an inline Copy/Check text button — same `copyCode` affordance as before the relayout, just without its own card.
+
+Currency, Monthly budget, Invite code, and Import expenses only render when a couple exists (`couple &&`), same conditional as before; Account and Change password always render.
+
+### Change Password Sheet
+**Role:** Change-password form, opened by tapping "Change password" on the Settings screen
+
+Bottom `Sheet`, same shape as the Filter Drawer: `SheetHeader`/`SheetTitle` ("Change password"), a `PasswordInput` field, and a `flex-row` `SheetFooter` with `Cancel` (`secondary`, `flex-1`) and `Save` (`flex-1`, disabled while saving or while the password is under 6 characters). Previously this was an inline form that expanded in place below the "Change password" row inside its `Card`; moved to a sheet so every Settings row stays a plain label(+value)+chevron, matching how Currency already opens a sheet rather than expanding in place.
+
+### Monthly Budget Sheet
+**Role:** Set-your-own-budget form, opened by tapping "Monthly budget" on the Settings screen
+
+Same shape as the Change Password Sheet: `SheetTitle` "Monthly budget", a number `Input` (`min="0"`, `step="1"`, `inputMode="decimal"`), `Cancel`/`Save` footer. Prefilled with the signed-in user's current `monthly_amount` when opened. Previously an inline form expanding in place below the "Monthly budget" row; moved to a sheet for the same reason as Change Password above.
+
 ### Currency Drawer
 **Role:** Currency picker on the Settings screen, changes the couple-level currency used to format every amount in the app
 
-Same `Sheet` + vertical list pattern as the Month Drawer above — single-select, no Reset/Apply footer, tapping a row applies it and closes the sheet immediately (a couple-level setting change, not a staged/local one). The trigger is a Settings `Card` row (`rounded-lg bg-muted px-4 py-3.5`, matching the invite-code row style) showing the current currency as `{symbol} {name}`, with a trailing `CaretRight`. The list itself shows `{symbol} · {name}` per row (e.g. "Rp · Indonesian Rupiah") for a fixed set of currencies (see `src/lib/currencies.ts`), defaulting to Indonesian Rupiah. Selecting a currency updates `couples.currency_code` and is immediately visible to both members of the couple.
+Same `Sheet` + vertical list pattern as the Month Drawer above — single-select, no Reset/Apply footer, tapping a row applies it and closes the sheet immediately (a couple-level setting change, not a staged/local one). The trigger is the Settings screen's "Currency" list row (see Settings Screen above) showing the current currency as `{symbol} {name}`, with a trailing `CaretRight`. The list itself shows `{symbol} · {name}` per row (e.g. "Rp · Indonesian Rupiah") for a fixed set of currencies (see `src/lib/currencies.ts`), defaulting to Indonesian Rupiah. Selecting a currency updates `couples.currency_code` and is immediately visible to both members of the couple.
 
 ### Upcoming Recurring List
 **Role:** Shows active recurring expenses and their next occurrence, above the grouped expense list on the Log screen
