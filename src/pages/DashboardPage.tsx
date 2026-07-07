@@ -157,7 +157,7 @@ export function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-4 border-t border-border">
+          <div className="pt-4 border-t border-border">
             {budgetTotal === 0 ? (
               <>
                 <p className="text-sm leading-relaxed text-muted-foreground">

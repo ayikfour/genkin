@@ -70,12 +70,12 @@ export function FilterDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl">
-        <SheetHeader>
+      <SheetContent side="bottom" className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl">
+        <SheetHeader className="shrink-0">
           <SheetTitle>Filter</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 px-4 pb-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4" data-sheet-scroll>
           <div className="space-y-2">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Paid by
@@ -124,7 +124,7 @@ export function FilterDrawer({
           </div>
         </div>
 
-        <SheetFooter className="flex-row">
+        <SheetFooter className="shrink-0 flex-row border-t border-border">
           <Button variant="secondary" onClick={handleReset} className="flex-1">
             Reset
           </Button>

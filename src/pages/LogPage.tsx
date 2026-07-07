@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Receipt, SpinnerGap } from '@phosphor-icons/react'
+import { CaretRight, PiggyBank, Receipt, SpinnerGap } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
@@ -178,16 +178,16 @@ export function LogPage() {
 
             {summary.maxSpendToday !== null && (
               <>
-                <p className="mt-3 text-xs text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Max today: <AnimatedAmount amount={summary.maxSpendToday} currencyCode={couple?.currency_code} />
                 </p>
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <BudgetProgressBar usedPct={summary.todayUsedPct} overBudget={summary.todayOverBudget} />
                 </div>
               </>
             )}
 
-            <div className="mt-3 flex items-center justify-between text-xs">
+            <div className="mt-2 flex items-center justify-between text-xs">
               <span className="font-medium text-foreground">
                 You · <AnimatedAmount amount={summary.youTodaySpent} currencyCode={couple?.currency_code} />
               </span>
@@ -196,9 +196,28 @@ export function LogPage() {
               </span>
             </div>
 
-            <p className="mt-3 text-xs font-medium text-muted-foreground">View all stats →</p>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">View all stats →</p>
           </Card>
         </div>
+
+        {summary.budgetTotal === 0 && (
+          <div className="px-5 pt-3">
+            <Card
+              className="flex flex-row cursor-pointer items-center gap-3 p-5"
+              role="button"
+              onClick={() => { playSound('click'); navigate('/settings') }}
+            >
+              <PiggyBank className="size-8 shrink-0 text-muted-foreground" weight="light" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">Set a monthly budget</p>
+                <p className="text-xs text-muted-foreground">
+                  Track spending against a shared goal for you and your partner.
+                </p>
+              </div>
+              <CaretRight className="size-3.5 shrink-0 text-muted-foreground" />
+            </Card>
+          </div>
+        )}
 
         <UpcomingRecurring
           recurringExpenses={recurringExpenses}

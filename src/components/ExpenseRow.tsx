@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect } from 'react'
-import { TrashSimple } from '@phosphor-icons/react'
+import { PencilSimple, TrashSimple } from '@phosphor-icons/react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAppSound } from '../hooks/useAppSound'
 import { formatCurrency } from '../lib/format'
 import type { Expense } from '../types'
 
-const SWIPE_WIDTH = 76
+const ACTION_WIDTH = 76
+const SWIPE_WIDTH = ACTION_WIDTH * 2
 const SWIPE_COMMIT_THRESHOLD = 8
 
 interface Props {
@@ -86,7 +87,6 @@ export function ExpenseRow({
 
     if (!drag?.committed) {
       if (isOpen) onOpenChange(false)
-      else { playSound('tap'); onEdit() }
       return
     }
 
@@ -141,9 +141,18 @@ export function ExpenseRow({
       style={showTopBorder ? { borderTop: '1px solid var(--border)' } : undefined}
     >
       <button
+        onClick={() => { playSound('tap'); onEdit(); onOpenChange(false) }}
+        className="absolute inset-y-0 flex items-center justify-center bg-secondary text-secondary-foreground"
+        style={{ width: ACTION_WIDTH, right: ACTION_WIDTH }}
+        aria-label="Edit expense"
+      >
+        <PencilSimple className="size-5" />
+      </button>
+
+      <button
         onClick={onDeleteRequest}
         className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive/15 text-destructive"
-        style={{ width: SWIPE_WIDTH }}
+        style={{ width: ACTION_WIDTH }}
         aria-label="Delete expense"
       >
         <TrashSimple className="size-5" />
