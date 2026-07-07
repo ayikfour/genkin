@@ -519,11 +519,19 @@ Pill container, radius 9999px, background #1d1d1d, padding 4px. Two equal segmen
 Monospace code block: background #282828 (`--color-ink`), radius 10px, padding 16px 20px. Code text: Geist font, 24px weight 500, letter-spacing 0.1em, color #e5e5e5. Centered. Accompanied by a copy-to-clipboard icon button (32px, icon-only, ghost).
 
 ### Mobile Top Nav (App Shell)
-**Role:** Primary navigation across the app's 3 screens (Logs, Stats, Settings)
+**Role:** Primary navigation chrome across all 4 in-app screens (Logs, Stats, Settings, Import expenses)
 
-Full-width fixed bar at top, replacing the earlier bottom nav now that the Balance screen (and its 4th tab) has been removed. Plain text-button tabs — no icons — in `font-heading` 18px weight 500, `gap-5` between tabs, `px-5` horizontal padding. Active tab: `--foreground`. Inactive: `--muted-foreground`, hover `--foreground`. No background fill or border — the bar is fully transparent and floats directly over whatever scrolls beneath it, keeping the page's own background as the only surface. Padding respects `env(safe-area-inset-top)` instead of the bottom inset.
+Full-width fixed bar at top: `[optional back arrow] [Title] ——— [Settings gear icon]`, replacing the earlier 3-tab bar now that Stats is a sub-page of Logs rather than a peer tab. Left side: an optional back arrow (ghost icon `Button`, `size="icon-sm"`, 28px — same compact icon-button convention used by the Password Input's visibility toggle) immediately followed by the current screen's title in `font-heading` 18px weight 500 (`text-lg font-medium tracking-tight`), always `--foreground` — there's no "inactive" state anymore, since it's a single title, not a tab set. Right side: a Phosphor `SlidersHorizontal` icon button (same ghost/`icon-sm` treatment) linking to `/settings`, present on every screen except Settings itself, where it's hidden entirely (not disabled, not highlighted — just absent, since you're already there). Padding respects `env(safe-area-inset-top)` instead of the bottom inset.
 
-Since the active tab already names the screen, none of the three pages (Logs, Stats, Settings) render their own duplicate `<h1>` page heading — content starts directly with the first card/row, relying on the nav label alone for orientation.
+At rest (scrolled to top), the bar is fully transparent and floats directly over whatever scrolls beneath it. Once the page scrolls (`window.scrollY > 0`), a glass surface fades in behind the bar — `bg-background/80`, `backdrop-blur-md`, `border-b border-border` — so the title/icons stop overlapping list content scrolling underneath. The surface is a separate absolutely-positioned layer (`absolute inset-0` behind the title/icon row) whose `opacity` toggles between `0` and `100` on a `transition-opacity duration-300`, rather than animating the blur/background itself, which keeps the fade smooth across browsers.
+
+Per-screen behavior:
+- **Logs** (`/log`): title only, no back arrow — it's the app's home/entry screen.
+- **Stats** (`/dashboard`): a sub-page of Logs, not a first-level tab. Title "Stats" with a back arrow returning to `/log`. Reached only via the tappable summary card at the top of Logs (see This Month + Budget Card), never from a persistent tab.
+- **Settings** (`/settings`): a sub-page of Logs, not a first-level screen. Title "Settings" with a back arrow returning to `/log`, Settings icon hidden (since you're already there).
+- **Import expenses** (`/import`, a sub-page of Settings): title "Import expenses" with a back arrow returning to `/settings`, Settings icon hidden (consistent with Settings, since Import is reached from and returns to Settings). This replaces the page's former bespoke in-content "← Settings" back button.
+
+Since the title always names the current screen, none of the four pages render a duplicate `<h1>` in this style — content starts directly with the first card/row. (Import's own larger in-content heading, "Import expenses" + subtitle, is a distinct, pre-existing element and is not a duplicate of the nav title.)
 
 ### Success/Danger Semantic Tones
 **Role:** Form error states, Dashboard/Stats month-over-month delta indicator
@@ -747,7 +755,7 @@ them:
 | Invite Code Display | `Input` (readOnly) + icon `Button` (copy), composed manually |
 | Password Input | `Input` + icon `Button` (`variant="ghost" size="icon-sm"`) with Phosphor `Eye`/`EyeSlash`, composed inside the input |
 | Empty State | `Card` + `Button`, composed manually |
-| Top Nav | app-owned (no shadcn equivalent); restyled with shadcn tokens + `cn()` |
+| Top Nav | app-owned (no shadcn equivalent); title/back/gear composed with shadcn `Button` (`variant="ghost" size="icon-sm"`) for the icon affordances |
 | Loading spinner (`ProtectedRoute`) | `Skeleton`, or a Phosphor spinner icon + `animate-spin` |
 
 New color/spacing/component additions going forward still follow the

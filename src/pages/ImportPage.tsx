@@ -4,7 +4,7 @@ import { parse as parseCsv } from 'papaparse'
 import { parse as parseDate, isValid as isValidDate } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Check, UploadSimple } from '@phosphor-icons/react'
+import { Check, UploadSimple } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useCategories } from '../hooks/useCategories'
@@ -306,13 +306,6 @@ export function ImportPage() {
 
   return (
     <div className="space-y-5 p-6">
-      <button
-        onClick={() => navigate('/settings')}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Settings
-      </button>
-
       <div>
         <h1 className="font-heading text-xl font-medium text-foreground">Import expenses</h1>
         <p className="text-sm text-muted-foreground">Load expenses from a CSV export of your spreadsheet.</p>
