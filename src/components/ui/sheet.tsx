@@ -247,19 +247,21 @@ function SheetContent({
           </div>
         )}
         {children}
-        {showCloseButton && (
-          <SheetPrimitive.Close ref={closeRef} data-slot="sheet-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute top-3 right-3"
-              size="icon-sm"
-            >
-              <XIcon
-              />
-              <span className="sr-only">Close</span>
-            </Button>
-          </SheetPrimitive.Close>
-        )}
+        {/* Always rendered so drag-to-dismiss has a Close to trigger even when
+            showCloseButton is false (the visible X is hidden but the sheet
+            still needs a real Radix close path, not just a visual slide-away,
+            or the overlay is left stuck open). */}
+        <SheetPrimitive.Close ref={closeRef} data-slot="sheet-close" asChild>
+          <Button
+            variant="ghost"
+            className={cn("absolute top-3 right-3", !showCloseButton && "sr-only")}
+            size="icon-sm"
+          >
+            <XIcon
+            />
+            <span className="sr-only">Close</span>
+          </Button>
+        </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>
   )
