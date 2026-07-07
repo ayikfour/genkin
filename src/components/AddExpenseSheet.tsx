@@ -73,7 +73,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       setCategory(expense.category)
       setDescription(expense.description)
       setDate(expense.expense_date)
-      setPaidBy(expense.paid_by)
+      setPaidBy(expense.paid_by ?? user?.id ?? '')
     } else {
       setAmountUnits('0')
       setCategory(categories[0]?.name ?? '')

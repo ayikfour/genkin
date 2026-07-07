@@ -63,10 +63,14 @@ export function computeBudgetSummary({
     const d = new Date(e.expense_date + 'T12:00:00')
     if (d >= thisMonthStart) {
       monthlyTotal += e.amount
-      paidByMap.set(e.paid_by, (paidByMap.get(e.paid_by) ?? 0) + e.amount)
+      if (e.paid_by) {
+        paidByMap.set(e.paid_by, (paidByMap.get(e.paid_by) ?? 0) + e.amount)
+      }
       if (e.expense_date === todayKey) {
         todaySpent += e.amount
-        paidByTodayMap.set(e.paid_by, (paidByTodayMap.get(e.paid_by) ?? 0) + e.amount)
+        if (e.paid_by) {
+          paidByTodayMap.set(e.paid_by, (paidByTodayMap.get(e.paid_by) ?? 0) + e.amount)
+        }
       }
     } else if (d >= lastMonthStart && d <= lastMonthEnd) {
       lastMonthTotal += e.amount
