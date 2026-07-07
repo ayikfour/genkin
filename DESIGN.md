@@ -285,12 +285,26 @@ Every amount is prefixed with the couple's selected currency symbol (`Rp`, `$`, 
 
 **Rolling animation (`AnimatedAmount.tsx`):** on surfaces where the number can change while on screen — the Dashboard/Log headline totals, remaining/over-budget amounts, daily pace, projected total, and per-person You/Partner spend — amounts roll their digits via [`@number-flow/react`](https://number-flow.barvian.me/) instead of snapping to the new value, matching the app's live/shared-log nature (a partner's edit can update your screen through Realtime). Same Geist/tabular-nums/weight-500 look; the currency symbol stays static text (NumberFlow only wraps the numeric part). NumberFlow formats via `Intl.NumberFormat` rather than the hand-rolled separators above, so each `Currency` in `currencies.ts` carries a `locale` (`id-ID` for Rupiah, `en-US` for the rest) chosen specifically because its grouping/decimal separators match this app's convention exactly. `formatCurrency()` remains the plain-string formatter for every other surface (category breakdown, "who paid" split, list-row amounts, CSV export, aria-labels) — not every amount needs to animate, only the ones likely to change in place.
 
+The Add/Edit form's amount display (`AddExpenseSheet.tsx`) uses the same
+`NumberFlow` with its library-default timing (no per-instance overrides). This
+form's entry model is cents-first (see Amount Keypad below): every keystroke
+shifts *every* digit position over by one place, so NumberFlow's diffing sees
+all digits as "changed" and rolls the whole number at once — there's no
+NumberFlow prop to isolate "only the newest digit animates" the way SwiftUI's
+`contentTransition(.numericText())` does per-character (`digits` only
+reserves width, it doesn't gate animation per position). A faster,
+`ease-out`-tuned `transformTiming`/`spinTiming`/`opacityTiming` (200-300ms,
+vs. the ~900ms spring default) was tried to make the whole-number roll feel
+less busy, but was reverted — it read as worse than the default, not better,
+so this instance is back to the same untuned timing as every other
+`NumberFlow` usage in the app rather than a bespoke override.
+
 ### Amount Keypad
 **Role:** Amount entry in the Add/Edit Expense sheet (`NumericKeypad.tsx`), replacing a free-text input
 
 A calculator-style on-screen keypad, part of the sheet's pinned action
 footer below the Category/Save row (see Bottom Sheet below) rather than
-directly under the amount display it edits — 3-column grid, `1 2 3 / 4 5 6 / 7 8 9 / . 0 ⌫` (Phosphor `Backspace` icon), each key a 56px (`h-14`) tap target — above the app's 48px minimum — `font-heading` digits, `hover:bg-muted`/`active:bg-muted` feedback, no borders between keys (the grid gaps alone separate them). Digits enter cents-first (Venmo/Cash App style): each tap shifts the value up from the smallest currency unit, so the display is always a complete, correctly-formatted number and every keystroke is a clean `NumberFlow` transition rather than editing a raw decimal string (see `src/lib/amountUnits.ts`). The `.` key has no function in this model — decimal placement is automatic — and renders disabled/muted for 0-decimal currencies (Rupiah, Yen) purely to keep the 3×4 grid visually consistent rather than reflowing to a 2-column grid for those currencies.
+directly under the amount display it edits — 3-column grid, `1 2 3 / 4 5 6 / 7 8 9 / 000 0 ⌫` (Phosphor `Backspace` icon), each key a 56px (`h-14`) tap target — above the app's 48px minimum — `font-heading` digits, `hover:bg-muted`/`active:bg-muted` feedback, no borders between keys (the grid gaps alone separate them). Digits enter cents-first (Venmo/Cash App style): each tap shifts the value up from the smallest currency unit, so the display is always a complete, correctly-formatted number and every keystroke is a clean `NumberFlow` transition rather than editing a raw decimal string (see `src/lib/amountUnits.ts`). The bottom-left key is `000` rather than a decimal point — decimal placement is automatic, so a `.` key would have no function — giving a fast-entry shortcut for round amounts instead of an inert placeholder. It routes through `appendDigits(units, '000')`, a small helper in `amountUnits.ts` that folds the multi-character tap through the existing single-digit `appendDigit` one character at a time, so leading-zero collapse still applies the same way it would for three individual `0` taps rather than a raw string concat.
 
 ### Bottom Toolbar (Log screen)
 **Role:** Add action + list filtering, fixed to the bottom of the Log screen
@@ -382,18 +396,35 @@ Filter/Month toolbar buttons' proportions rather than stretching edge to
 edge. No segment uses `Chip` — chips read as filter/selection pills
 elsewhere in the app, and this row is a direct-action control, not a
 selection, so it gets the same bordered rectangle language as buttons
-instead. Below that: the amount, given `py-6` (24px) of breathing room above
-and below so it doesn't feel squeezed between the segmented row and the
-description field, and a tight `gap-1` (4px) between the currency symbol and
-the figure so they read as one unit rather than two separate elements; a
-plain `Input` for description at the standard `h-12`
-(48px) input height — a taller `h-[72px]` was tried and looked oversized/
-disproportionate for a single-line field, so it stayed at the default — with
-no `Label` above it — the placeholder carries the meaning,
-though an `aria-label="Description"` keeps it named for screen readers. The
-"Split" feature (the old evenly-split-expense toggle, its `expenses.split`
-column, and the Balance screen that read it) has been removed entirely — not
-just hidden from the UI. There is no split state to track in this form anymore.
+instead. Below that, the amount and description are grouped in their own
+`space-y-2` (8px) wrapper rather than relying on the scrollable region's
+outer `space-y-4` (16px) rhythm — Tailwind's `space-y-*` applies `margin-top`
+to later siblings via a `:not([hidden]) ~ :not([hidden])` selector, which
+outranks a plain utility class on the child, so getting a tighter gap for
+just this one pair meant nesting them in their own spacing scope rather than
+fighting that specificity with `!important`. Inside the wrapper: the amount,
+given `pt-6` (24px) of breathing room above so it doesn't feel squeezed
+against the segmented row (no bottom padding — the wrapper's own `space-y-2`
+supplies the gap down to the description field), and a tight `gap-1` (4px)
+between the currency symbol and the figure so they read as one unit rather
+than two separate elements; a borderless, center-aligned `Input` for
+description (`border-transparent bg-transparent text-center
+dark:bg-transparent`, `h-12`/48px height retained — a taller `h-[72px]` was
+tried and looked oversized/disproportionate for a single-line field, so it
+stayed at the default) so it reads as an extension of the amount display
+rather than a separate boxed field, sitting directly beneath it — no
+`Label` above it, the placeholder carries the meaning, though an
+`aria-label="Description"` keeps it named for screen readers. The focus-visible
+ring is deliberately suppressed here too (`focus-visible:border-transparent
+focus-visible:ring-0`, overriding the base `Input` component's default focus
+treatment) — tapping into the field stays visually identical to its resting
+state, matching the "reads as an extension of the amount display" intent
+rather than a distinct form field. This is a one-off override scoped to this
+input instance; the shared `Input` component's default focus-visible styling
+is unchanged for every other consumer. The "Split" feature (the old evenly-split-expense toggle, its
+`expenses.split` column, and the Balance screen that read it) has been
+removed entirely — not just hidden from the UI. There is no split state to
+track in this form anymore.
 
 **Scrollable region + pinned action footer:** the form's body is split into
 two flex children of `SheetContent` (which is given `flex flex-col

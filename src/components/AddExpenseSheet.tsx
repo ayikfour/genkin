@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { formatDateLabel } from '../lib/format'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { parseISODateLocal, toISODateLocal, nextOccurrence } from '../lib/dates'
-import { appendDigit, backspace, unitsToAmount, amountToUnits } from '../lib/amountUnits'
+import { appendDigits, backspace, unitsToAmount, amountToUnits } from '../lib/amountUnits'
 import type { Expense, Category, CoupleMember, RecurrenceFrequency, RecurringExpense } from '../types'
 import {
   Sheet,
@@ -260,30 +260,33 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
               )}
             </div>
 
-            {/* Amount */}
-            <div className="flex items-center justify-center gap-1 py-6">
-              <span className="font-heading text-2xl font-medium text-muted-foreground">
-                {currency.symbol}
-              </span>
-              <span className="font-heading text-5xl font-medium text-foreground">
-                <NumberFlow
-                  value={unitsToAmount(amountUnits, currency.decimals)}
-                  locales={currency.locale}
-                  format={{ minimumFractionDigits: currency.decimals, maximumFractionDigits: currency.decimals }}
-                />
-              </span>
-            </div>
+            {/* Amount + Description — grouped with their own tight gap,
+                independent of the outer space-y-4 rhythm used elsewhere in
+                this scrollable region */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-1 pt-6">
+                <span className="font-heading text-2xl font-medium text-muted-foreground">
+                  {currency.symbol}
+                </span>
+                <span className="font-heading text-5xl font-medium text-foreground">
+                  <NumberFlow
+                    value={unitsToAmount(amountUnits, currency.decimals)}
+                    locales={currency.locale}
+                    format={{ minimumFractionDigits: currency.decimals, maximumFractionDigits: currency.decimals }}
+                  />
+                </span>
+              </div>
 
-            {/* Description */}
-            <Input
-              id="description"
-              type="text"
-              placeholder="e.g. Grab, Indomaret…"
-              aria-label="Description"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="h-12"
-            />
+              <Input
+                id="description"
+                type="text"
+                placeholder="e.g. Grab, Indomaret…"
+                aria-label="Description"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="h-12 border-transparent bg-transparent text-center focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
+              />
+            </div>
 
             {/* Recurring */}
             {alreadyLinked && (
@@ -318,8 +321,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
             )}
 
             <NumericKeypad
-              decimalDisabled={currency.decimals === 0}
-              onDigit={d => setAmountUnits(u => appendDigit(u, d))}
+              onDigit={d => setAmountUnits(u => appendDigits(u, d))}
               onBackspace={() => setAmountUnits(u => backspace(u))}
             />
 
