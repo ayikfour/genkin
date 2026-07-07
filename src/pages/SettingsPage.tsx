@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { useBudgets } from '../hooks/useBudgets'
+import { useSoundPreference } from '../hooks/useSoundPreference'
 import { supabase } from '../lib/supabase'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { formatCurrency } from '../lib/format'
@@ -16,6 +17,7 @@ export function SettingsPage() {
   const navigate = useNavigate()
   const { user, couple, refreshCouple, signOut } = useAuth()
   const { budgets, refetch: refetchBudgets } = useBudgets(couple?.couple_id)
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundPreference()
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
@@ -107,6 +109,15 @@ export function SettingsPage() {
             </span>
           </button>
         )}
+
+        {/* Sound effects */}
+        <button
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
+        >
+          <span className="text-base text-foreground">Sound effects</span>
+          <span className="text-sm text-muted-foreground">{soundEnabled ? 'On' : 'Off'}</span>
+        </button>
 
         {/* Invite code */}
         {couple && (

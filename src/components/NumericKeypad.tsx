@@ -1,4 +1,5 @@
 import { Backspace } from '@phosphor-icons/react'
+import { useAppSound } from '@/hooks/useAppSound'
 
 interface Props {
   onDigit: (digit: string) => void
@@ -15,24 +16,36 @@ const KEY_CLASS =
 // appendDigits so it collapses leading zeros the same way three individual
 // "0" taps would.
 export function NumericKeypad({ onDigit, onBackspace }: Props) {
+  const playSound = useAppSound()
+
+  function handleDigit(digit: string) {
+    playSound('key-press')
+    onDigit(digit)
+  }
+
+  function handleBackspace() {
+    playSound('key-press')
+    onBackspace()
+  }
+
   return (
     <div className="grid grid-cols-3 gap-2">
       {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => (
-        <button key={d} type="button" className={KEY_CLASS} onClick={() => onDigit(d)}>
+        <button key={d} type="button" className={KEY_CLASS} onClick={() => handleDigit(d)}>
           {d}
         </button>
       ))}
-      <button type="button" className={KEY_CLASS} onClick={() => onDigit('000')}>
+      <button type="button" className={KEY_CLASS} onClick={() => handleDigit('000')}>
         000
       </button>
-      <button type="button" className={KEY_CLASS} onClick={() => onDigit('0')}>
+      <button type="button" className={KEY_CLASS} onClick={() => handleDigit('0')}>
         0
       </button>
       <button
         type="button"
         aria-label="Backspace"
         className={KEY_CLASS}
-        onClick={onBackspace}
+        onClick={handleBackspace}
       >
         <Backspace className="size-6" />
       </button>

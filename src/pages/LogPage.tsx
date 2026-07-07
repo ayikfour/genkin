@@ -10,6 +10,7 @@ import { useCoupleMembers } from '../hooks/useCoupleMembers'
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
 import { useBudgets } from '../hooks/useBudgets'
 import { useExpenseFilters } from '../contexts/ExpenseFiltersContext'
+import { useAppSound } from '../hooks/useAppSound'
 import { computeBudgetSummary } from '../lib/budgetSummary'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { FilterDrawer } from '../components/FilterDrawer'
@@ -43,6 +44,7 @@ export function LogPage() {
   const members = useCoupleMembers(couple?.couple_id)
   const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
   const { budgets } = useBudgets(couple?.couple_id)
+  const playSound = useAppSound()
 
   const now = useMemo(() => new Date(), [])
   const summary = useMemo(
@@ -65,6 +67,7 @@ export function LogPage() {
   function handleSaved(action: 'added' | 'updated' | 'deleted') {
     refetch()
     refetchRecurring()
+    playSound(action === 'deleted' ? 'delete' : 'success')
     toast(TOAST_COPY[action])
   }
 
@@ -135,6 +138,7 @@ export function LogPage() {
     exitEditMode()
     refetch()
     refetchRecurring()
+    playSound('delete')
     toast(count === 1 ? 'Expense deleted' : `${count} expenses deleted`)
   }
 

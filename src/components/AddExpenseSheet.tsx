@@ -3,6 +3,7 @@ import NumberFlow from '@number-flow/react'
 import { CaretRight, CaretDown, Check } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useAppSound } from '../hooks/useAppSound'
 import { formatDateLabel } from '../lib/format'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { parseISODateLocal, toISODateLocal, nextOccurrence } from '../lib/dates'
@@ -44,6 +45,7 @@ const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string }[] = [
 
 export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories, members, recurringExpenses }: Props) {
   const { user, couple } = useAuth()
+  const playSound = useAppSound()
   const isEdit = !!expense
   const currency = getCurrency(couple?.currency_code ?? DEFAULT_CURRENCY_CODE)
 
@@ -94,8 +96,8 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
 
   async function handleSave() {
     const amt = unitsToAmount(amountUnits, currency.decimals)
-    if (amt <= 0) { setError('Enter a valid amount'); return }
-    if (!category) { setError('Select a category'); return }
+    if (amt <= 0) { playSound('error'); setError('Enter a valid amount'); return }
+    if (!category) { playSound('error'); setError('Select a category'); return }
     setSaving(true); setError('')
 
     let recurringExpenseId = expense?.recurring_expense_id ?? null
@@ -117,7 +119,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
         .select()
         .single()
 
-      if (templateErr) { setError(templateErr.message); setSaving(false); return }
+      if (templateErr) { playSound('error'); setError(templateErr.message); setSaving(false); return }
       recurringExpenseId = template.id
     }
 
@@ -136,7 +138,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       ? await supabase.from('expenses').update(payload).eq('id', expense!.id)
       : await supabase.from('expenses').insert(payload)
 
-    if (err) { setError(err.message); setSaving(false) }
+    if (err) { playSound('error'); setError(err.message); setSaving(false) }
     else { onSaved(isEdit ? 'updated' : 'added'); onClose() }
   }
 
