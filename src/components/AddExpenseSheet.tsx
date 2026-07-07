@@ -159,7 +159,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
 
   function togglePaidBy() {
     const other = payerOptions.find(opt => opt.id !== paidBy && opt.id)
-    if (other?.id) setPaidBy(other.id)
+    if (other?.id) { playSound('select'); setPaidBy(other.id) }
   }
 
   const selectedCategory = categories.find(cat => cat.name === category)
@@ -208,7 +208,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                     mode="single"
                     selected={date ? parseISODateLocal(date) : undefined}
                     onSelect={d => {
-                      if (d) setDate(toISODateLocal(d))
+                      if (d) { playSound('select'); setDate(toISODateLocal(d)) }
                       setDatePickerOpen(false)
                     }}
                   />
@@ -239,7 +239,11 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                     <div className="overflow-hidden rounded-lg border border-border">
                       <button
                         type="button"
-                        onClick={() => { setIsRecurring(false); setRecurringPickerOpen(false) }}
+                        onClick={() => {
+                          if (isRecurring) playSound('toggle-off')
+                          setIsRecurring(false)
+                          setRecurringPickerOpen(false)
+                        }}
                         className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
                       >
                         None
@@ -249,7 +253,12 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => { setIsRecurring(true); setFrequency(opt.value); setRecurringPickerOpen(false) }}
+                          onClick={() => {
+                            playSound('toggle-on')
+                            setIsRecurring(true)
+                            setFrequency(opt.value)
+                            setRecurringPickerOpen(false)
+                          }}
                           className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
                         >
                           {opt.label}
@@ -356,6 +365,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                     key={cat.id}
                     type="button"
                     onClick={() => {
+                      playSound('select')
                       setCategory(cat.name)
                       setCategoryPickerOpen(false)
                     }}

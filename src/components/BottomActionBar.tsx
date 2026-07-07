@@ -1,5 +1,6 @@
 import { Plus, X, CaretDown } from '@phosphor-icons/react'
 import { MonthDrawer } from './MonthDrawer'
+import { useAppSound } from '@/hooks/useAppSound'
 import { Button } from '@/components/ui/button'
 
 // The bottom toolbar floats with no background behind it, so the default
@@ -38,6 +39,7 @@ export function BottomActionBar({
   selectedCount = 0,
   onRequestBulkDelete,
 }: BottomActionBarProps) {
+  const playSound = useAppSound()
   const hasActiveFilters = activeFilterCount > 0
   const inEditMode = mode === 'logs' && editMode
 
@@ -56,7 +58,12 @@ export function BottomActionBar({
           <X className="size-5" weight="bold" />
         </Button>
       ) : (
-        <Button onClick={onAdd} size="icon" aria-label="Add expense" className={TOOLBAR_SOLID_HOVER}>
+        <Button
+          onClick={() => { playSound('tap'); onAdd() }}
+          size="icon"
+          aria-label="Add expense"
+          className={TOOLBAR_SOLID_HOVER}
+        >
           <Plus className="size-5" weight="bold" />
         </Button>
       )}
@@ -75,7 +82,10 @@ export function BottomActionBar({
           {mode === 'logs' && (
             <Button onClick={onEnterEditMode} className={TOOLBAR_SOLID_HOVER}>Edit</Button>
           )}
-          <Button onClick={onOpenFilter} className={`gap-1.5 ${TOOLBAR_SOLID_HOVER}`}>
+          <Button
+            onClick={() => { playSound('tap'); onOpenFilter() }}
+            className={`gap-1.5 ${TOOLBAR_SOLID_HOVER}`}
+          >
             {hasActiveFilters ? `${activeFilterCount} · Filter` : 'Filter'}
             <CaretDown className="size-3.5" />
           </Button>

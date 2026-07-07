@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { TrashSimple } from '@phosphor-icons/react'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useAppSound } from '../hooks/useAppSound'
 import { formatCurrency } from '../lib/format'
 import type { Expense } from '../types'
 
@@ -43,6 +44,7 @@ export function ExpenseRow({
   selected = false,
   onToggleSelect,
 }: Props) {
+  const playSound = useAppSound()
   const [dragX, setDragX] = useState(isOpen ? -SWIPE_WIDTH : 0)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef<DragState | null>(null)
@@ -84,11 +86,12 @@ export function ExpenseRow({
 
     if (!drag?.committed) {
       if (isOpen) onOpenChange(false)
-      else onEdit()
+      else { playSound('tap'); onEdit() }
       return
     }
 
     const shouldOpen = dragX < -SWIPE_WIDTH / 2
+    if (shouldOpen) playSound('slide')
     setDragX(shouldOpen ? -SWIPE_WIDTH : 0)
     onOpenChange(shouldOpen)
   }

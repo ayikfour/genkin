@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from 'recharts'
 import { useAuth } from '../hooks/useAuth'
+import { useAppSound } from '../hooks/useAppSound'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
 import { useCoupleMembers } from '../hooks/useCoupleMembers'
@@ -35,6 +36,7 @@ function TooltipBox({ active, payload, label, currencyCode }: { active?: boolean
 
 export function DashboardPage() {
   const { user, couple } = useAuth()
+  const playSound = useAppSound()
   const { expenses, refetch } = useExpenses(couple?.couple_id)
   const categories = useCategories()
   const members = useCoupleMembers(couple?.couple_id)
@@ -125,6 +127,7 @@ export function DashboardPage() {
   function handleSaved(action: 'added' | 'updated' | 'deleted') {
     refetch()
     refetchRecurring()
+    playSound(action === 'deleted' ? 'delete' : 'success')
     toast(TOAST_COPY[action])
   }
 

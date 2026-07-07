@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAppSound } from '../hooks/useAppSound'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Category, RecurringExpense } from '../types'
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function UpcomingRecurring({ recurringExpenses, categories, currencyCode, onStopped }: Props) {
+  const playSound = useAppSound()
   const [stoppingId, setStoppingId] = useState<string | null>(null)
   const [stopping, setStopping] = useState(false)
 
@@ -38,6 +40,7 @@ export function UpcomingRecurring({ recurringExpenses, categories, currencyCode,
     await supabase.from('recurring_expenses').update({ active: false }).eq('id', stoppingId)
     setStopping(false)
     setStoppingId(null)
+    playSound('undo')
     onStopped()
   }
 
@@ -52,7 +55,7 @@ export function UpcomingRecurring({ recurringExpenses, categories, currencyCode,
             <button
               key={r.id}
               type="button"
-              onClick={() => setStoppingId(r.id)}
+              onClick={() => { playSound('tap'); setStoppingId(r.id) }}
               className="flex w-full items-center justify-between gap-2 border-b border-border px-4 py-3.5 text-left last:border-b-0"
             >
               <span className="flex min-w-0 items-center gap-2">

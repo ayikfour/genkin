@@ -5,10 +5,30 @@ import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useAppSound } from "@/hooks/useAppSound"
 import { XIcon } from "@phosphor-icons/react"
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+// Plays once per genuine dismissal (X button, Escape, backdrop tap, or a
+// drag-past-threshold — anything Radix itself recognizes as a close
+// gesture). Consumers that close a sheet as the side effect of an action
+// (selecting a category, applying a filter, saving) do so by changing
+// their own `open` state directly rather than through this callback, so
+// this never doubles up with an action's own sound.
+function Sheet({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  const playSound = useAppSound()
+  return (
+    <SheetPrimitive.Root
+      data-slot="sheet"
+      onOpenChange={open => {
+        if (!open) playSound('swoosh')
+        onOpenChange?.(open)
+      }}
+      {...props}
+    />
+  )
 }
 
 function SheetTrigger({
@@ -86,11 +106,26 @@ function SheetContent({
   // a sheet that looks freshly reopened. A MutationObserver tied directly to
   // the DOM node via the ref callback isn't subject to that: it fires on the
   // real attribute change regardless of which component's render caused it.
+  //
+  // Also clears `dragY` the instant `data-state` flips to "closed" (not just
+  // back to "open"): for drag-to-dismiss, `handlePointerUp` below leaves
+  // `dragY` pinned at the sheet's full height so it snaps away instantly,
+  // but nothing else ever resets that inline `transform` back to 0. Left in
+  // place, it fights Radix's own `data-closed:slide-out-to-bottom-10` exit
+  // animation for the same CSS property once `data-state` changes — which
+  // can keep that animation's `animationend` from firing, and since the
+  // overlay's own teardown rides on the same Presence/exit-animation
+  // completion, the backdrop is left stuck on screen. Every other dismissal
+  // path (X button, Escape, backdrop) never touches `dragY`, so it's always
+  // already 0 there and never hits this conflict — clearing it here as soon
+  // as we see the close makes drag-to-dismiss behave identically to those.
   const resetIfJustOpened = React.useCallback((node: HTMLDivElement) => {
     const isOpenNow = node.getAttribute("data-state") === "open"
     if (isOpenNow && !wasOpenRef.current) {
       dragRef.current = null
       setIsDragging(false)
+      setDragY(0)
+    } else if (!isOpenNow && wasOpenRef.current) {
       setDragY(0)
     }
     wasOpenRef.current = isOpenNow

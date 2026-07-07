@@ -534,15 +534,16 @@ Same `Sheet` + vertical list pattern as the Filter Drawer above (not a native `S
 ### Settings Screen
 **Role:** Account, currency, budget, couple-invite, and import entry points, all on one screen (`SettingsPage.tsx`)
 
-Restyled from six separate `Card`s (one per section) to a single iOS-Settings-style grouped list — one `overflow-hidden rounded-lg border border-border` container holding every row, divided by `border-b border-border last:border-b-0` hairlines, each row `px-4 py-3.5` — the exact same container/row classes as the Filter Drawer, Month Drawer, and Category Picker row-lists above, reused here instead of introducing a new "settings row" pattern. No section headers or sub-grouping; it's one flat list, top to bottom: Account, Change password, Currency, Monthly budget, Sound effects, Invite code, Import expenses. Sign out stays outside the list as a full-width `secondary` `Button` below it, unchanged from before the relayout.
+Restyled from six separate `Card`s (one per section) to a single iOS-Settings-style grouped list — one `overflow-hidden rounded-lg border border-border` container holding every row, divided by `border-b border-border last:border-b-0` hairlines, each row `px-4 py-3.5` — the exact same container/row classes as the Filter Drawer, Month Drawer, and Category Picker row-lists above, reused here instead of introducing a new "settings row" pattern. No section headers or sub-grouping; it's one flat list, top to bottom: Account, Change password, Currency, Monthly budget, Sound effects, Volume, Invite code, Import expenses. Sign out stays outside the list as a full-width `secondary` `Button` below it, unchanged from before the relayout.
 
-Four row variants share the list:
+Five row variants share the list:
 - **Navigable/editable row** (Change password, Currency, Monthly budget, Import expenses): the whole row is a `<button>`, label left (`text-base text-foreground`), and — when there's a current value worth surfacing (Currency's `{symbol} {name}`, Monthly budget's formatted amount) — that value in `text-muted-foreground text-sm` immediately before a trailing `CaretRight`. Change password and Import expenses have no value, just the chevron. Tapping opens the corresponding sheet/drawer (Change Password Sheet, Monthly Budget Sheet, Currency Drawer) or navigates (`/import`).
 - **Inline toggle row** (Sound effects): same `<button>` shape as the navigable row, but tapping flips a boolean immediately in place instead of opening a sheet — no `CaretRight`, just an "On"/"Off" label in `text-muted-foreground text-sm` that updates on tap. Used for the one setting (see "Sound & Feedback" above) that's a single persisted flag with no further sub-options, so a whole drawer would be overkill.
+- **Inline slider row** (Volume): a plain `<div>` (not a button — the interactive element is the slider itself), label left, a `Slider` (`src/components/ui/slider.tsx`, wrapping `radix-ui`'s Slider primitive — track `bg-muted`, filled range and thumb `bg-primary`) capped to `w-32` on the right rather than stretching the full row. Disabled (dimmed, non-interactive) whenever the Sound effects toggle above it is off, since there's nothing to scale.
 - **Static row** (Account): a plain `<div>`, no chevron, two-line stack — email on line one, "Signed in as {display_name}" in muted text on line two (only when a couple exists).
 - **Static row with inline action** (Invite code): a plain `<div>`, no chevron, monospace code (`font-heading`, `tracking-[0.15em]`) on the right paired with an inline Copy/Check text button — same `copyCode` affordance as before the relayout, just without its own card.
 
-Currency, Monthly budget, Invite code, and Import expenses only render when a couple exists (`couple &&`), same conditional as before; Account and Change password always render.
+Currency, Monthly budget, Invite code, and Import expenses only render when a couple exists (`couple &&`), same conditional as before; Account, Change password, Sound effects, and Volume always render.
 
 ### Change Password Sheet
 **Role:** Change-password form, opened by tapping "Change password" on the Settings screen
@@ -620,7 +621,7 @@ Success: `#4ade80` (muted green — readable on dark surfaces without being neon
 Fixed, bottom-centered above the FAB/nav, glass pill (background #1d1d1d 90%, backdrop blur 20px, 1px #e5e5e5 at 10% border), radius 9999px, padding 12px 20px. DM Sans 14px weight 500, color #e5e5e5. Optional leading checkmark in `--color-success`. Slides up + fades in (200ms), auto-dismisses after 2.5s, no manual close control — keep it out of the way of the next action.
 
 ### Sound & Feedback
-**Role:** Playful audio feedback for the highest-frequency and highest-stakes interactions — keypad entry and save/delete outcomes
+**Role:** Playful audio feedback across nearly every interactive surface — entry, saves/deletes, toggles, pickers, list actions, and navigation
 
 Built on `@web-kits/audio`'s "playful" preset (bouncy, cartoon-like pitch
 sweeps — `public/patches/playful.json`, fetched from
@@ -629,31 +630,62 @@ wired through a single `AppSoundProvider` (`src/contexts/SoundContext.tsx`)
 that wraps the whole app in `App.tsx`, between `AuthProvider` and
 `ExpenseFiltersProvider`. Components never call the library's `usePatch`
 directly — they call `useAppSound()`, a thin wrapper that no-ops until the
-patch has loaded. Four sounds are wired so far, deliberately not the full
-26-sound preset (see the "not wired yet" list below):
+patch has loaded. Seventeen of the preset's 26 sounds are wired, grouped by
+what they signal:
 
-- **`key-press`** — every digit and backspace tap on the Amount Keypad
-  (`NumericKeypad.tsx`). The single highest-frequency interaction in the
-  app, and the best signal for whether the sound character actually works.
-- **`success`** — after an expense is added or updated (`LogPage.tsx`'s
-  `handleSaved`, alongside the existing toast).
-- **`error`** — inline validation failures and Supabase errors in the Add
-  Expense sheet's save flow (`AddExpenseSheet.tsx`'s `handleSave`).
-- **`delete`** — any confirmed expense deletion, single or bulk
-  (`LogPage.tsx`'s `handleSaved`/`handleConfirmBulkDelete`).
+- **Entry & outcomes** — `key-press` on every Amount Keypad digit/backspace
+  tap (`NumericKeypad.tsx`); `success` after an expense is added/updated
+  (`LogPage.tsx`/`DashboardPage.tsx`'s `handleSaved`); `error` on inline
+  validation/Supabase failures in the Add Expense save flow
+  (`AddExpenseSheet.tsx`'s `handleSave`); `delete` on any confirmed expense
+  deletion, single or bulk (`handleSaved`/`handleConfirmBulkDelete`).
+- **Toggles & pickers** — `toggle-on`/`toggle-off` for the Recurring
+  on/off switch (`AddExpenseSheet.tsx`); `select` for the You/Partner payer
+  swap, category picker, date picker, Month Drawer, Currency Drawer, and
+  the Filter Drawer's own "Filter" apply button; `select`/`deselect` for
+  Filter Drawer category and payer chips as they toggle; `undo` for the
+  Filter Drawer's "Reset" and for confirming "Stop" on a recurring series
+  (`UpcomingRecurring.tsx`).
+- **List interactions** — `checkbox` for row selection in Log's bulk-edit
+  mode (`LogPage.tsx`'s `toggleSelect`); `slide` when a row's swipe-to-reveal
+  delete affordance opens (`ExpenseRow.tsx`, only on open, not on dismiss);
+  `tap` for opening an Upcoming-recurring row's stop confirmation and for
+  tapping a log row to edit it (not swiping — the same `handlePointerUp`,
+  the plain-tap branch).
+- **Navigation & mode switches** — `click` for TopNav's back/settings
+  buttons and the LogPage "Today" card; `tap` for the Bottom Action Bar's
+  Add and Filter triggers; `tab-switch` for entering/exiting Log's
+  bulk-edit mode.
+- **Settings utility** — `copy` on a successful invite-code copy; `warning`
+  on a failed currency update.
+- **Sheet/drawer dismissal** — `swoosh`, wired once in `sheet.tsx`'s
+  `Sheet` root wrapper rather than per-consumer: it intercepts
+  `onOpenChange` and plays on any transition to closed, before forwarding
+  to the consumer's own handler. Radix only calls `onOpenChange` for
+  dismissals *it* recognizes (X button, Escape, backdrop tap, or a
+  drag-past-threshold, since drag-to-dismiss triggers a synthetic click on
+  the real Radix close button) — a picker closing itself after a selection
+  changes its `open` state directly instead, so this never doubles up with
+  that action's own `select`/`toggle`/`undo` sound.
 
-**Mute preference:** a "Sound effects" row on the Settings screen (see
-below), backed by `localStorage` only (`genkin:sound-enabled`) — device-level,
-not synced across a couple's accounts or devices, since this is a $0-cost
-UX preference, not shared expense data. Toggling it flips the `enabled`
-prop on `@web-kits/audio`'s own `SoundProvider`, which gates playback for
-every sound in one place — `useAppSound()` doesn't duplicate that check.
+**Mute preference & volume:** a "Sound effects" row and a "Volume" row on
+the Settings screen (see below), backed by `localStorage` only
+(`genkin:sound-enabled`, `genkin:sound-volume`) — device-level, not synced
+across a couple's accounts or devices, since these are $0-cost UX
+preferences, not shared expense data. Both feed straight into
+`@web-kits/audio`'s own `SoundProvider` (`enabled`/`volume` props), which
+gates/scales playback for every sound in one place — `useAppSound()`
+doesn't duplicate either check. The mute toggle row itself stays silent
+(asymmetric otherwise: muting plays a sound but un-muting can't, since the
+provider's `enabled` is already false at the moment of the click that
+turns it back on); the volume slider is disabled (not hidden) whenever
+sound is muted.
 
-**Not wired yet (intentional, revisit once the above feels right):**
-toggle-on/off (recurring, payer switch), select/deselect (category, filter
-chips, edit-mode checkboxes), tab-switch, swoosh (sheet/drawer open), and
-nav clicks (TopNav, bottom toolbar). `hover` is skipped permanently — this
-is a touch-first mobile PWA, so hover has no meaningful state on-device.
+**Still not wired (intentional):** `page-enter`/`page-exit`, and the
+unused `notification`/`info`/`send`/`pop`/`expand`/`collapse` — no current
+UI pattern maps cleanly to these yet. `hover` is skipped permanently —
+this is a touch-first mobile PWA, so hover has no meaningful state
+on-device.
 
 ### OTP Code Input
 **Role:** Code-entry step wherever email ownership needs verifying — the Email code tab's sign-in (fallback to tapping the magic link), password sign-up confirmation, and password recovery, on the Auth screen

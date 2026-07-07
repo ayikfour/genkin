@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Check } from '@phosphor-icons/react'
+import { useAppSound } from '../hooks/useAppSound'
 import type { Category, CoupleMember } from '../types'
 import {
   Sheet,
@@ -31,6 +32,7 @@ export function FilterDrawer({
   selectedPayer,
   onApply,
 }: Props) {
+  const playSound = useAppSound()
   const [pendingCategories, setPendingCategories] = useState<string[]>(selectedCategories)
   const [pendingPayer, setPendingPayer] = useState<string | null>(selectedPayer)
 
@@ -46,12 +48,14 @@ export function FilterDrawer({
   }))
 
   function toggleCategory(name: string) {
+    playSound(pendingCategories.includes(name) ? 'deselect' : 'select')
     setPendingCategories(prev =>
       prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]
     )
   }
 
   function handleReset() {
+    playSound('undo')
     setPendingCategories([])
     setPendingPayer(null)
     onApply([], null)
@@ -59,6 +63,7 @@ export function FilterDrawer({
   }
 
   function handleFilter() {
+    playSound('select')
     onApply(pendingCategories, pendingPayer)
     onClose()
   }
@@ -81,7 +86,10 @@ export function FilterDrawer({
                 return (
                   <button
                     key={opt.value}
-                    onClick={() => setPendingPayer(selected ? null : opt.value)}
+                    onClick={() => {
+                      playSound(selected ? 'deselect' : 'select')
+                      setPendingPayer(selected ? null : opt.value)
+                    }}
                     className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
                   >
                     {opt.label}

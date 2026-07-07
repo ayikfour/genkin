@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, SlidersHorizontal } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
+import { useAppSound } from '@/hooks/useAppSound'
 import { Button } from '@/components/ui/button'
 
 const NAV_CONFIG: Record<string, { title: string; back?: string; hideGear?: boolean }> = {
@@ -14,6 +15,7 @@ const NAV_CONFIG: Record<string, { title: string; back?: string; hideGear?: bool
 export function TopNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const playSound = useAppSound()
   const config = NAV_CONFIG[pathname] ?? NAV_CONFIG['/log']
   const [scrolled, setScrolled] = useState(() => window.scrollY > 0)
 
@@ -43,7 +45,7 @@ export function TopNav() {
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => navigate(config.back!)}
+              onClick={() => { playSound('click'); navigate(config.back!) }}
             >
               <ArrowLeft />
             </Button>
@@ -53,7 +55,7 @@ export function TopNav() {
           </h1>
         </div>
         {!config.hideGear && (
-          <Button variant="ghost" size="icon-sm" onClick={() => navigate('/settings')}>
+          <Button variant="ghost" size="icon-sm" onClick={() => { playSound('click'); navigate('/settings') }}>
             <SlidersHorizontal />
           </Button>
         )}

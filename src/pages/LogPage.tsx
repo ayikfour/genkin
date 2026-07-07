@@ -115,16 +115,19 @@ export function LogPage() {
   }
 
   function enterEditMode() {
+    playSound('tab-switch')
     setEditMode(true)
     setOpenSwipeRowId(null)
   }
 
   function exitEditMode() {
+    playSound('tab-switch')
     setEditMode(false)
     setSelectedIds([])
   }
 
   function toggleSelect(id: string) {
+    playSound('checkbox')
     setSelectedIds(prev => (prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]))
   }
 
@@ -152,7 +155,7 @@ export function LogPage() {
           <Card
             className="cursor-pointer p-5"
             role="button"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => { playSound('click'); navigate('/dashboard') }}
           >
             <div className="flex items-start justify-between">
               <div>

@@ -1,5 +1,6 @@
 import { Check } from '@phosphor-icons/react'
 import { CURRENCIES } from '../lib/currencies'
+import { useAppSound } from '../hooks/useAppSound'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function CurrencyDrawer({ isOpen, onClose, selectedCode, onSelect }: Props) {
+  const playSound = useAppSound()
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
       <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl">
@@ -23,7 +25,7 @@ export function CurrencyDrawer({ isOpen, onClose, selectedCode, onSelect }: Prop
               return (
                 <button
                   key={currency.code}
-                  onClick={() => { onSelect(currency.code); onClose() }}
+                  onClick={() => { playSound('select'); onSelect(currency.code); onClose() }}
                   className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
                 >
                   <span className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CaretDown, Check } from '@phosphor-icons/react'
+import { useAppSound } from '@/hooks/useAppSound'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
@@ -18,6 +19,7 @@ function monthLabel(month: string, multiYear: boolean): string {
 }
 
 export function MonthDrawer({ months, selectedMonth, onSelect, triggerClassName }: Props) {
+  const playSound = useAppSound()
   const [open, setOpen] = useState(false)
   const multiYear = new Set(months.map(m => m.slice(0, 4))).size > 1
 
@@ -25,7 +27,10 @@ export function MonthDrawer({ months, selectedMonth, onSelect, triggerClassName 
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className={`gap-1.5 ${triggerClassName ?? ''}`}>
+      <Button
+        onClick={() => { playSound('tap'); setOpen(true) }}
+        className={`gap-1.5 ${triggerClassName ?? ''}`}
+      >
         {monthLabel(selectedMonth, multiYear)}
         <CaretDown className="size-3.5" />
       </Button>
@@ -42,7 +47,7 @@ export function MonthDrawer({ months, selectedMonth, onSelect, triggerClassName 
                 return (
                   <button
                     key={month}
-                    onClick={() => { onSelect(month); setOpen(false) }}
+                    onClick={() => { playSound('select'); onSelect(month); setOpen(false) }}
                     className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left text-sm font-medium text-foreground last:border-b-0"
                   >
                     {monthLabel(month, multiYear)}

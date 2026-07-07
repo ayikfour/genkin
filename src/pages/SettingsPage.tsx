@@ -4,6 +4,9 @@ import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { useBudgets } from '../hooks/useBudgets'
 import { useSoundPreference } from '../hooks/useSoundPreference'
+import { useSoundVolume } from '../hooks/useSoundVolume'
+import { useAppSound } from '../hooks/useAppSound'
+import { Slider } from '@/components/ui/slider'
 import { supabase } from '../lib/supabase'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { formatCurrency } from '../lib/format'
@@ -18,6 +21,8 @@ export function SettingsPage() {
   const { user, couple, refreshCouple, signOut } = useAuth()
   const { budgets, refetch: refetchBudgets } = useBudgets(couple?.couple_id)
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundPreference()
+  const { volume, setVolume } = useSoundVolume()
+  const playSound = useAppSound()
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
@@ -40,6 +45,7 @@ export function SettingsPage() {
   async function copyCode() {
     if (!inviteCode) return
     await navigator.clipboard.writeText(inviteCode)
+    playSound('copy')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -52,6 +58,7 @@ export function SettingsPage() {
       .eq('id', couple.couple_id)
       .select()
     if (error || !data?.length) {
+      playSound('warning')
       toast('Could not update currency')
       return
     }
@@ -73,7 +80,7 @@ export function SettingsPage() {
 
         {/* Change password */}
         <button
-          onClick={() => setPasswordSheetOpen(true)}
+          onClick={() => { playSound('click'); setPasswordSheetOpen(true) }}
           className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
         >
           <span className="text-base text-foreground">Change password</span>
@@ -83,7 +90,7 @@ export function SettingsPage() {
         {/* Currency */}
         {couple && (
           <button
-            onClick={() => setCurrencyDrawerOpen(true)}
+            onClick={() => { playSound('click'); setCurrencyDrawerOpen(true) }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
           >
             <span className="text-base text-foreground">Currency</span>
@@ -99,7 +106,7 @@ export function SettingsPage() {
         {/* Monthly budget */}
         {couple && (
           <button
-            onClick={() => setBudgetSheetOpen(true)}
+            onClick={() => { playSound('click'); setBudgetSheetOpen(true) }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
           >
             <span className="text-base text-foreground">Monthly budget</span>
@@ -118,6 +125,21 @@ export function SettingsPage() {
           <span className="text-base text-foreground">Sound effects</span>
           <span className="text-sm text-muted-foreground">{soundEnabled ? 'On' : 'Off'}</span>
         </button>
+
+        {/* Volume */}
+        <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5 last:border-b-0">
+          <span className="text-base text-foreground">Volume</span>
+          <Slider
+            value={[volume]}
+            onValueChange={([v]) => setVolume(v)}
+            min={0}
+            max={1}
+            step={0.05}
+            disabled={!soundEnabled}
+            className="w-32"
+            aria-label="Sound effects volume"
+          />
+        </div>
 
         {/* Invite code */}
         {couple && (
@@ -149,7 +171,7 @@ export function SettingsPage() {
         {/* Import */}
         {couple && (
           <button
-            onClick={() => navigate('/import')}
+            onClick={() => { playSound('click'); navigate('/import') }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
           >
             <span className="text-base text-foreground">Import expenses</span>
