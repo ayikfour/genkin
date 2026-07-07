@@ -288,7 +288,9 @@ Every amount is prefixed with the couple's selected currency symbol (`Rp`, `$`, 
 ### Amount Keypad
 **Role:** Amount entry in the Add/Edit Expense sheet (`NumericKeypad.tsx`), replacing a free-text input
 
-A calculator-style on-screen keypad below the animated amount display: 3-column grid, `1 2 3 / 4 5 6 / 7 8 9 / . 0 ⌫` (Phosphor `Backspace` icon), each key a 56px (`h-14`) tap target — above the app's 48px minimum — `font-heading` digits, `hover:bg-muted`/`active:bg-muted` feedback, no borders between keys (the grid gaps alone separate them). Digits enter cents-first (Venmo/Cash App style): each tap shifts the value up from the smallest currency unit, so the display is always a complete, correctly-formatted number and every keystroke is a clean `NumberFlow` transition rather than editing a raw decimal string (see `src/lib/amountUnits.ts`). The `.` key has no function in this model — decimal placement is automatic — and renders disabled/muted for 0-decimal currencies (Rupiah, Yen) purely to keep the 3×4 grid visually consistent rather than reflowing to a 2-column grid for those currencies.
+A calculator-style on-screen keypad, part of the sheet's pinned action
+footer below the Category/Save row (see Bottom Sheet below) rather than
+directly under the amount display it edits — 3-column grid, `1 2 3 / 4 5 6 / 7 8 9 / . 0 ⌫` (Phosphor `Backspace` icon), each key a 56px (`h-14`) tap target — above the app's 48px minimum — `font-heading` digits, `hover:bg-muted`/`active:bg-muted` feedback, no borders between keys (the grid gaps alone separate them). Digits enter cents-first (Venmo/Cash App style): each tap shifts the value up from the smallest currency unit, so the display is always a complete, correctly-formatted number and every keystroke is a clean `NumberFlow` transition rather than editing a raw decimal string (see `src/lib/amountUnits.ts`). The `.` key has no function in this model — decimal placement is automatic — and renders disabled/muted for 0-decimal currencies (Rupiah, Yen) purely to keep the 3×4 grid visually consistent rather than reflowing to a 2-column grid for those currencies.
 
 ### Bottom Toolbar (Log screen)
 **Role:** Add action + list filtering, fixed to the bottom of the Log screen
@@ -309,9 +311,16 @@ draggable, not just the handle — matching native bottom-sheet apps where you
 can grab anywhere on the sheet body. A press-and-drag down commits to
 dragging the sheet only once movement exceeds a 6px threshold *and* the
 sheet's own scrollable body is at `scrollTop <= 0`; otherwise the same
-downward motion scrolls the form as normal. This means a drag started
-mid-scroll naturally hands off to dismiss-dragging the moment the content
-reaches its top edge, and a plain tap/scroll never gets hijacked. Once
+downward motion scrolls the form as normal. Most sheets scroll via
+`overflow-y-auto` on `SheetContent` itself, so this check reads
+`SheetContent`'s own `scrollTop`. A consumer that instead splits its content
+into an independently-scrolling region plus a non-scrolling pinned section
+(see the Add/Edit form's pinned action footer below) tags its scrollable
+descendant with `data-sheet-scroll`; if present, `sheet.tsx` checks *that*
+element's `scrollTop` instead, since the outer `SheetContent` in that layout
+never scrolls itself and would otherwise always read `0`. This means a drag
+started mid-scroll naturally hands off to dismiss-dragging the moment the
+content reaches its top edge, and a plain tap/scroll never gets hijacked. Once
 committed, the sheet translates via `transform: translateY()`, released
 either on distance (25% of sheet height, clamped 80–200px) or on flick
 velocity (>0.5px/ms). The 36×4px handle pill (`bg-muted-foreground/30`,
@@ -350,6 +359,8 @@ Two guards, both required:
   edge doesn't chain into a page-level bounce. Radix's own scroll lock
   (`react-remove-scroll`, applied automatically while the sheet is open)
   handles the rest by blocking touchmove outside the sheet's scrollable area.
+  In the Add/Edit form, this lives on the inner `data-sheet-scroll` region
+  rather than `SheetContent` itself (see the pinned action footer below).
 
 **Add/edit form layout (`AddExpenseSheet.tsx`):** no visible sheet chrome at
 the top — `showCloseButton={false}` drops the `X`, and `SheetTitle` is kept
@@ -363,9 +374,9 @@ border border-border`, `overflow-hidden`) split into segments by internal
 `border-r` dividers — first segment opens the date `Popover`/`Calendar`
 (trailing `CaretDown`), second toggles who paid on tap (trailing
 `CaretRight`, disabled with no partner), and a third — present only when the
-expense isn't already part of a recurring series — toggles Recurring on/off
-directly on tap. The container is `inline-flex` and the segments size to
-their own content (no `flex-1`) — the row is meant to read as a compact
+expense isn't already part of a recurring series — opens the Recurring
+dropdown (see below). The container is `inline-flex` and the segments size
+to their own content (no `flex-1`) — the row is meant to read as a compact
 control sitting in the corner, not a full-width bar, matching the
 Filter/Month toolbar buttons' proportions rather than stretching edge to
 edge. No segment uses `Chip` — chips read as filter/selection pills
@@ -379,31 +390,57 @@ plain `Input` for description at the standard `h-12`
 (48px) input height — a taller `h-[72px]` was tried and looked oversized/
 disproportionate for a single-line field, so it stayed at the default — with
 no `Label` above it — the placeholder carries the meaning,
-though an `aria-label="Description"` keeps it named for screen readers; then
-a final row pairing a `Button` (`variant="outline"`, icon + name + trailing
-`CaretRight`) that opens the category picker with the full-width primary
-Save `Button` — the category trigger used to be a `Chip` too, now it's a
-bordered `Button` so it visually reads as the same weight of control as
-"Add expense"/"Save changes" beside it, just secondary instead of
-primary. The "Split" feature (the old evenly-split-expense toggle, its
-`expenses.split` column, and the Balance screen that read it) has been
-removed entirely — not just hidden from the UI. There is no split state to
-track in this form anymore.
+though an `aria-label="Description"` keeps it named for screen readers. The
+"Split" feature (the old evenly-split-expense toggle, its `expenses.split`
+column, and the Balance screen that read it) has been removed entirely — not
+just hidden from the UI. There is no split state to track in this form anymore.
 
-**Recurring toggle:** the third segment of the row above, labeled "🔁
-Recurring" while off. Tapping it toggles `isRecurring` directly (no popover)
-and, once on, swaps its own label to the current frequency ("🔁 Monthly")
-with a trailing `Check` and the same `bg-secondary text-secondary-foreground`
-treatment `Chip`'s selected state uses elsewhere — so the segment itself
-communicates the current value, the same way the date and payer segments do.
-Turning it on reveals a Weekly/Monthly/Yearly picker directly below the
-description field, using the same bordered/divided row-list pattern as the
-Filter Drawer (`rounded-lg border border-border`, rows with `border-b
+**Scrollable region + pinned action footer:** the form's body is split into
+two flex children of `SheetContent` (which is given `flex flex-col
+overflow-hidden` instead of scrolling itself): an upper region (segmented
+row, amount, description, the already-linked recurring note) with `flex-1
+min-h-0 overflow-y-auto overscroll-contain` and a `data-sheet-scroll`
+attribute (see Drag-to-dismiss above), and a lower `shrink-0` footer —
+`border-t border-border` above it for separation — holding the Category
+button + Save `Button` row, the error message, `NumericKeypad`, and (edit
+mode) the Delete button. The footer is a normal flex sibling sized to its
+own content, not `position: sticky`/`fixed` — CSS sticky doesn't actually
+keep a bottom-anchored element visible from initial scroll position when
+it's the last item in a scrolling container (it only pins once you've
+scrolled *past* it), so a plain flex layout with the scrollable region
+alone taking `flex-1` is what guarantees the footer — Category/Save and the
+keypad in particular — is always fully visible with zero scrolling,
+regardless of device height or whether the on-screen keyboard is open
+(shrinking the visible viewport while Description is focused). Only the
+upper region (segmented row/amount/description) ever needs its own internal
+scroll on very short viewports; the category trigger used to be a `Chip`
+too, now it's a bordered `Button` so it visually reads as the same weight of
+control as "Add expense"/"Save changes" beside it, just secondary instead of
+primary.
+
+**Recurring dropdown:** the third segment of the row above, labeled "🔁
+Recurring" while off, current frequency label ("🔁 Monthly") while on — same
+`bg-secondary text-secondary-foreground` treatment `Chip`'s selected state
+uses elsewhere, plus a trailing `CaretDown` (matching the date segment) since
+tapping it opens a `Popover` rather than toggling in place. The `PopoverContent`
+(`align="end"`, `w-auto p-0`) holds the same bordered/divided row-list pattern
+as the Filter Drawer (`rounded-lg border border-border`, rows with `border-b
 border-border last:border-b-0`, `px-4 py-3.5`, trailing `Check` when
-selected) — single-select, no Reset/Apply footer, since it's local to this
-one field. If the expense being edited is already linked to an active
-series, the third segment doesn't render at all (row goes back to two
-segments) and a static muted line takes its place below the description
+selected) with **four** rows — "None", "Weekly", "Monthly", "Yearly" —
+merging the old on/off toggle and the frequency choice into one control:
+picking "None" sets `isRecurring` false, picking a frequency sets
+`isRecurring` true and the chosen value, and either selection closes the
+popover. This replaced an earlier version where the segment was a plain
+toggle and the Weekly/Monthly/Yearly list rendered inline below the
+Description field whenever recurring was on — that inline list permanently
+pushed the rest of the form down any time recurring was active, whereas the
+popover keeps the row-list visible only while open, reusing the date field's
+existing `Popover` primitive rather than introducing shadcn's unused
+`Select` or a native `<select>` (both were already tried and dropped
+elsewhere in the app for the Month Drawer, for the same "reads poorly"
+reason chips were dropped). If the expense being edited is already linked to
+an active series, the third segment doesn't render at all (row goes back to
+two segments) and a static muted line takes its place below the description
 field instead ("🔁 Recurring · Monthly — manage this from Upcoming on the Log
 page") — editing or stopping an existing series only happens from the
 Upcoming list, not from an individual generated expense, to avoid

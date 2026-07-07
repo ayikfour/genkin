@@ -168,7 +168,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl"
+          className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl"
           onPointerDownOutside={e => {
             // The category picker is a second, sibling <Sheet>, and the date
             // picker is a Popover — neither is a JSX descendant of this
@@ -191,7 +191,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
         >
           <SheetTitle className="sr-only">{isEdit ? 'Edit expense' : 'Add expense'}</SheetTitle>
 
-          <div className="space-y-4 px-4 pb-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4" data-sheet-scroll>
             {/* Date + who paid + recurring, combined into one bordered rectangle */}
             <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-border">
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -292,8 +292,12 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                 {' — manage this from Upcoming on the Log page.'}
               </p>
             )}
+          </div>
 
-            {/* Category + Save */}
+          {/* Category + Save + Keypad, pinned below the scrollable region above
+              so they're always reachable without scrolling, regardless of
+              device height or the on-screen keyboard being open. */}
+          <div className="shrink-0 space-y-4 border-t border-border px-4 pt-4 pb-4">
             <div className="flex items-center gap-2">
               <Button
                 type="button"

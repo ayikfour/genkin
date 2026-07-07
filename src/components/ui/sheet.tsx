@@ -128,8 +128,16 @@ function SheetContent({
       // to its top edge — otherwise this same downward motion should scroll
       // the form instead. Re-anchor the origin at the commit point so the
       // sheet doesn't jump by however far the finger already travelled while
-      // scrolling.
-      const scrolledToTop = (contentRef.current?.scrollTop ?? 0) <= 0
+      // scrolling. Most consumers scroll the SheetContent element itself, but
+      // a consumer can opt a nested element into being "the" scrollable body
+      // instead (e.g. when it needs an always-visible pinned footer below an
+      // independently-scrolling region) by tagging it `data-sheet-scroll` —
+      // if present, its scrollTop is checked instead of the outer element's,
+      // which otherwise never scrolls and would read 0 forever.
+      const scrollTarget =
+        contentRef.current?.querySelector<HTMLElement>("[data-sheet-scroll]") ??
+        contentRef.current
+      const scrolledToTop = (scrollTarget?.scrollTop ?? 0) <= 0
       const movedDown = e.clientY - drag.originY
       if (!scrolledToTop || movedDown <= DRAG_MOVE_THRESHOLD) return
       drag.dragging = true
