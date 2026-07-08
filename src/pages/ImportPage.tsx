@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { parse as parseCsv } from 'papaparse'
 import { parse as parseDate, isValid as isValidDate } from 'date-fns'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Check, UploadSimple } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
@@ -124,6 +124,8 @@ function dupKey(row: {
 
 export function ImportPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const fromOnboarding = location.state?.from === 'onboarding'
   const { user, space } = useAuth()
   const categories = useCategories()
   const members = useSpaceMembers(space?.space_id)
@@ -564,8 +566,8 @@ export function ImportPage() {
           <p className="text-base font-medium text-foreground">
             Imported {imported} expense{imported === 1 ? '' : 's'}
           </p>
-          <Button onClick={() => navigate('/log')} className="w-full">
-            Back to log
+          <Button onClick={() => navigate(fromOnboarding ? '/onboarding?step=invite' : '/log')} className="w-full">
+            {fromOnboarding ? 'Continue' : 'Back to log'}
           </Button>
         </Card>
       )}

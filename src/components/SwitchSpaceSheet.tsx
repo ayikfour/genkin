@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { friendlyJoinSpaceError } from '../lib/spaceErrors'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,14 +38,7 @@ export function SwitchSpaceSheet({ isOpen, onClose }: Props) {
     })
     setSaving(false)
     if (err) {
-      const msg = err.message.includes('invalid_invite_code')
-        ? 'Invite code not found. Double-check it with your partner.'
-        : err.message.includes('space_full')
-        ? 'This space already has two members.'
-        : err.message.includes('already_in_this_space')
-        ? "You're already in this space."
-        : err.message
-      setError(msg)
+      setError(friendlyJoinSpaceError(err.message))
       return
     }
     await refreshSpace()

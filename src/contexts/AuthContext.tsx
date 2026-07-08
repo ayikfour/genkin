@@ -16,9 +16,11 @@ interface AuthContextValue {
   space: SpaceInfo | null
   hasPassword: boolean
   loading: boolean
+  needsOnboarding: boolean
   signOut: () => Promise<void>
   refreshSpace: () => Promise<void>
   refreshHasPassword: () => Promise<void>
+  completeOnboarding: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -112,8 +114,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) await fetchSpace(user.id)
   }
 
+  // Marks the one-time first-run walkthrough (src/pages/OnboardingPage.tsx)
+  // as done, permanently, for this account. Lives in auth user_metadata
+  // rather than space_members: leave_space()/join_space() delete and
+  // recreate a user's space_members row on every switch, so a flag stored
+  // there would be wiped by an ordinary "switch spaces" action and
+  // incorrectly re-show onboarding to someone who already completed it.
+  async function completeOnboarding() {
+    const { data, error } = await supabase.auth.updateUser({ data: { onboarding_completed: true } })
+    if (!error && data.user) setSession(s => (s ? { ...s, user: data.user } : s))
+  }
+
+  const user = session?.user ?? null
+  const needsOnboarding = !!space && user?.user_metadata?.onboarding_completed !== true
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, space, hasPassword, loading, signOut, refreshSpace, refreshHasPassword: fetchHasPassword }}>
+    <AuthContext.Provider value={{ session, user, space, hasPassword, loading, needsOnboarding, signOut, refreshSpace, refreshHasPassword: fetchHasPassword, completeOnboarding }}>
       {children}
     </AuthContext.Provider>
   )

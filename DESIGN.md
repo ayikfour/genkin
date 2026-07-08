@@ -655,6 +655,18 @@ what they signal:
   bulk-edit mode.
 - **Settings utility** — `copy` on a successful invite-code copy; `warning`
   on a failed currency update.
+- **Onboarding** (`OnboardingPage.tsx`) — reuses the existing vocabulary
+  rather than inventing new sound-to-action mappings: `tap` on the
+  Name/Budget steps' "Continue" (matching the Bottom Action Bar's
+  Add/Filter triggers above); `key-press` on the Budget step's keypad,
+  free via `NumericKeypad`; `click` on the Import step's "Import from
+  CSV" and skip link (matching Settings' identical "Import expenses" row
+  and back-nav convention); `copy` on the invite step's code copy
+  (identical to Settings); `success`/`error` on the invite step's Join
+  outcome (matching Add Expense's save semantics — a real mutation with a
+  real failure mode); `success` on the bottom "Finish" button. First
+  screen to combine `tap`/`click`/`success`/`error` together across one
+  flow — no new sound names.
 - **Sheet/drawer dismissal** — `swoosh`, wired once in `sheet.tsx`'s
   `Sheet` root wrapper rather than per-consumer: it intercepts
   `onOpenChange` and plays on any transition to closed, before forwarding
@@ -723,6 +735,23 @@ Renders only when `summary.budgetTotal === 0` (the same "no budget set" signal u
 **Role:** The budget-usage indicator on the This Month + Budget card (both the Dashboard and Log screen variants) — `BudgetProgressBar.tsx`
 
 A row of evenly-sized blocks (`flex gap-1`, each a `flex-1 h-2 rounded-[2px]`), not a single continuous fill — visually distinct from the Who Paid and category bars below, which stay continuous/proportional. Filled-block count = `round(usedPct / 100 * segments)` (default 20 segments on Dashboard, 12 on the Log screen's smaller card); filled blocks are `--color-success` or `--color-danger` (matching the remaining/over-budget badge next to it), unfilled blocks are `bg-muted`. No new color — same binary success/danger convention used everywhere else on this card.
+
+### Onboarding Step Indicator
+**Role:** Progress marker at the top of the Onboarding walkthrough — `OnboardingStepIndicator.tsx`
+
+Same `flex gap-1` row-of-blocks language as the Segmented Progress Bar above, but a fixed 4-segment count (no responsive block-width math, since the segment count never changes) — each block `flex-1 h-1.5`. Filled (current step and every step already passed) is `bg-foreground`; upcoming steps are `bg-muted`. Deliberately does **not** reuse `--color-success`/`--color-danger` — those stay reserved for the budget-usage semantic on the Segmented Progress Bar and This Month + Budget Card; a plain neutral fill correctly signals "progress," not "good/bad."
+
+### Onboarding Walkthrough
+**Role:** First-run flow for a brand-new signup — `OnboardingPage.tsx`, a full-bleed page (no `AppShell`/`TopNav`, same treatment as `/auth`) reached via `/onboarding`
+
+Four steps in order — name, budget, import, invite/join/solo — each rendered inline in one file (matching Import's own 4-step-inline convention) below the Onboarding Step Indicator. **Skippable at every step, never a forced gate**: this directly replaces nothing removed by the solo-by-default reframe (`0b04650`) — a user who taps straight through ends up exactly where a to-do-nothing signup already lands (a solo space, no budget, no import), just having seen what's available. Reuses existing components/logic rather than re-implementing them:
+
+- **Name**: the same `Label`+`Input` (maxLength 32) as Change Password/Change Username Sheet's own name field, prefilled from the auto-derived `space.display_name`. Always has a valid default, so "Continue" is never blocked.
+- **Budget**: the same `NumberFlow` + Amount Keypad + `amountUnits.ts` pattern as the Monthly Budget Sheet, inline instead of in a `Sheet`. Only upserts a `budgets` row if the entered amount is above zero — leaving it at 0 and continuing is the skip path, consistent with the rest of the app's "budget 0 means unset" convention (Budget Reminder Card, This Month + Budget Card empty states).
+- **Import**: a springboard `Card`, not a re-implementation of the CSV pipeline — "Import from CSV" hands off to the existing `/import` page (passing router state so its `done` step returns to `/onboarding?step=invite` instead of `/log`), or a plain-text skip link advances straight to the last step.
+- **Invite/Join/Solo**: not three equal-weight choices — solo is the implicit default (nothing to tap), matching "solo by default." Two `Card`s sit above a single bottom-pinned "Finish" button: the invite-code display (identical to Settings' Invite Code row) and a join card (invite-code + display-name inputs, prefilled reactively from the current `space.display_name`, "Join" button disabled until both fields are non-empty — same validation as the Settings "Join a different space" sheet, sharing its `join_space` error-message mapping via `src/lib/spaceErrors.ts`). "Finish" is the true primary CTA of the step; the two cards above it are optional detours.
+
+Current step lives in the `?step=` URL query param (`useSearchParams`), not component state or `sessionStorage` — it survives a hard refresh and needs no explicit clear-on-completion step, since navigating to `/log` on finish naturally drops it. Gated by `AuthContext`'s `needsOnboarding` (`user.user_metadata.onboarding_completed !== true`) via `ProtectedRoute`, which redirects a brand-new signup to `/onboarding` and redirects a completed user away from it — the page itself carries no gating logic of its own.
 
 ### Category Color Palette
 **Role:** Distinguishing categories in the Dashboard's category breakdown bar — the only place beyond Success/Danger where multiple chromatic colors appear together
