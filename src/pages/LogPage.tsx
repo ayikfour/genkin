@@ -43,7 +43,7 @@ export function LogPage() {
   const categories = useCategories()
   const members = useCoupleMembers(couple?.couple_id)
   const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
-  const { budgets } = useBudgets(couple?.couple_id)
+  const { budgets, loading: budgetsLoading } = useBudgets(couple?.couple_id)
   const playSound = useAppSound()
 
   const now = useMemo(() => new Date(), [])
@@ -200,7 +200,7 @@ export function LogPage() {
           </Card>
         </div>
 
-        {summary.budgetTotal === 0 && (
+        {!budgetsLoading && summary.youBudget === 0 && (
           <div className="px-5 pt-3">
             <Card
               className="flex flex-row cursor-pointer items-center gap-3 p-5"
