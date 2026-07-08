@@ -50,7 +50,7 @@ export function MonthlyBudgetSheet({ isOpen, onClose, currentAmount, effectiveMo
 
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl">
+      <SheetContent side="bottom" showCloseButton={false} className="rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>Monthly budget</SheetTitle>
         </SheetHeader>

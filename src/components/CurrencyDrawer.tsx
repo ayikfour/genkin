@@ -14,7 +14,7 @@ export function CurrencyDrawer({ isOpen, onClose, selectedCode, onSelect }: Prop
   const playSound = useAppSound()
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl">
+      <SheetContent side="bottom" showCloseButton={false} className="max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>Currency</SheetTitle>
         </SheetHeader>

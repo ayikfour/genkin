@@ -70,7 +70,7 @@ export function FilterDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl">
+      <SheetContent side="bottom" showCloseButton={false} className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl">
         <SheetHeader className="shrink-0">
           <SheetTitle>Filter</SheetTitle>
         </SheetHeader>
