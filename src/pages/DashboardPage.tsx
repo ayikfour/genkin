@@ -174,14 +174,23 @@ export function DashboardPage() {
               <>
                 <div className="flex items-start justify-between">
                   <p className="text-sm font-medium text-foreground">Budget</p>
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: overBudget ? 'var(--color-danger)' : 'var(--color-success)' }}
-                  >
-                    {overBudget
-                      ? <>Over by <AnimatedAmount amount={Math.abs(remaining)} currencyCode={currencyCode} /></>
-                      : <><AnimatedAmount amount={remaining} currencyCode={currencyCode} /> left</>}
-                  </span>
+                  {isCurrentMonth ? (
+                    <Link
+                      to="/settings"
+                      className="text-xs font-medium text-foreground underline underline-offset-2"
+                    >
+                      Edit budget
+                    </Link>
+                  ) : (
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: overBudget ? 'var(--color-danger)' : 'var(--color-success)' }}
+                    >
+                      {overBudget
+                        ? <>Over by <AnimatedAmount amount={Math.abs(remaining)} currencyCode={currencyCode} /></>
+                        : <><AnimatedAmount amount={remaining} currencyCode={currencyCode} /> left</>}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-3">
