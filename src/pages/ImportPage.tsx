@@ -17,7 +17,8 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 
-const REQUIRED_HEADERS = ['category', 'amount', 'paid by', 'description', 'date']
+const REQUIRED_HEADERS = ['category', 'amount', 'paid by', 'description', 'date'] as const
+type RequiredHeader = (typeof REQUIRED_HEADERS)[number]
 const CHUNK_SIZE = 500
 
 interface RawRow {
@@ -26,6 +27,30 @@ interface RawRow {
   'paid by': string
   description: string
   date: string
+}
+
+// Header matching is tolerant of casing/whitespace and a handful of common
+// aliases, so a file doesn't get rejected outright over a trivial rename
+// (e.g. a spreadsheet exported with "Payer" or "Notes" instead of the exact
+// column names below).
+const HEADER_ALIASES: Record<string, RequiredHeader> = {
+  category: 'category',
+  amount: 'amount',
+  price: 'amount',
+  cost: 'amount',
+  'paid by': 'paid by',
+  paidby: 'paid by',
+  payer: 'paid by',
+  'who paid': 'paid by',
+  description: 'description',
+  notes: 'description',
+  note: 'description',
+  merchant: 'description',
+  date: 'date',
+}
+
+function normalizeHeader(h: string): string {
+  return h.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 interface ParsedRow {
@@ -124,12 +149,17 @@ export function ImportPage() {
     const file = e.target.files?.[0]
     if (!file) return
     setParseError('')
-    parseCsv<RawRow>(file, {
+    parseCsv<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
       complete: results => {
         const fields = results.meta.fields ?? []
-        const missing = REQUIRED_HEADERS.filter(h => !fields.includes(h))
+        const headerMap = new Map<RequiredHeader, string>()
+        for (const field of fields) {
+          const canonical = HEADER_ALIASES[normalizeHeader(field)]
+          if (canonical && !headerMap.has(canonical)) headerMap.set(canonical, field)
+        }
+        const missing = REQUIRED_HEADERS.filter(h => !headerMap.has(h))
         if (missing.length > 0) {
           setParseError(
             `This file is missing expected column(s): ${missing.join(', ')}. Expected: ${REQUIRED_HEADERS.join(', ')}.`
@@ -140,7 +170,14 @@ export function ImportPage() {
           setParseError('No rows found in this file.')
           return
         }
-        setRawRows(results.data)
+        const normalizedRows: RawRow[] = results.data.map(raw => ({
+          category: raw[headerMap.get('category')!] ?? '',
+          amount: raw[headerMap.get('amount')!] ?? '',
+          'paid by': raw[headerMap.get('paid by')!] ?? '',
+          description: raw[headerMap.get('description')!] ?? '',
+          date: raw[headerMap.get('date')!] ?? '',
+        }))
+        setRawRows(normalizedRows)
         setStep('configure')
       },
       error: err => setParseError(err.message),
@@ -250,6 +287,16 @@ export function ImportPage() {
         i === index ? { ...r, category: categoryName, errors: r.errors.filter(e => e !== 'unknown category') } : r
       )
     )
+  }
+
+  // A row lands here (paid_by null, paid_by_label set) whenever the CSV's
+  // "paid by" name didn't match the importer or an already-joined member —
+  // e.g. the partner hasn't joined yet, or joined under a different display
+  // name than the one typed into the spreadsheet. Lets the importer
+  // reassign it by hand instead of it silently riding along as "Partner"
+  // until (or unless) a name-based join-time backfill happens to catch it.
+  function fixRowPayer(index: number, payerId: string) {
+    setRows(prev => prev.map((r, i) => (i === index ? { ...r, paid_by: payerId, paid_by_label: null } : r)))
   }
 
   function toggleManualExclude(index: number) {
@@ -408,8 +455,7 @@ export function ImportPage() {
                   <div className="mb-1">
                     {items.map(({ row, index }, i) => {
                       const excluded = row.errors.length > 0 || row.manuallyExcluded
-                      const payerLabel =
-                        row.paid_by === user?.id ? 'You' : row.paid_by ? 'Partner' : (row.paid_by_label ?? 'Partner')
+                      const payerLabel = row.paid_by === user?.id ? 'You' : 'Partner'
                       const categoryMeta = categories.find(c => c.name === row.category)
                       const includable = row.errors.length === 0
 
@@ -456,9 +502,32 @@ export function ImportPage() {
                                 ))}
                               </select>
                             )}
-                            <p className="truncate text-xs text-muted-foreground">
-                              {row.description ? `${row.description} · ${payerLabel}` : payerLabel}
-                            </p>
+                            <div className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                              {row.description && <span className="truncate">{row.description}</span>}
+                              {row.description && <span>·</span>}
+                              {row.paid_by === null ? (
+                                <select
+                                  value=""
+                                  onClick={e => e.stopPropagation()}
+                                  onChange={e => fixRowPayer(index, e.target.value)}
+                                  className="shrink-0 rounded border border-border bg-input/30 px-1.5 py-0.5 text-xs text-foreground"
+                                >
+                                  <option value="" disabled>
+                                    Fix payer…
+                                  </option>
+                                  <option value={user!.id}>You</option>
+                                  {members
+                                    .filter(m => m.user_id !== user?.id)
+                                    .map(m => (
+                                      <option key={m.user_id} value={m.user_id}>
+                                        {m.display_name}
+                                      </option>
+                                    ))}
+                                </select>
+                              ) : (
+                                <span className="truncate">{payerLabel}</span>
+                              )}
+                            </div>
                             {row.errors.length > 0 && (
                               <p className="truncate text-xs text-destructive">{row.errors.join(', ')}</p>
                             )}

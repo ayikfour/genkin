@@ -270,7 +270,7 @@ export function LogPage() {
                       ? 'You'
                       : expense.paid_by
                         ? (payer?.display_name ?? 'Partner')
-                        : (expense.paid_by_label ?? 'Partner')
+                        : 'Partner'
 
                     return (
                       <ExpenseRow
