@@ -18,8 +18,8 @@ interface Props {
 }
 
 export function MonthlyBudgetSheet({ isOpen, onClose, currentAmount, effectiveMonth, refetchBudgets }: Props) {
-  const { user, couple } = useAuth()
-  const currency = getCurrency(couple?.currency_code ?? DEFAULT_CURRENCY_CODE)
+  const { user, space } = useAuth()
+  const currency = getCurrency(space?.currency_code ?? DEFAULT_CURRENCY_CODE)
 
   const [amountUnits, setAmountUnits] = useState('0')
   const [saving, setSaving] = useState(false)
@@ -35,8 +35,8 @@ export function MonthlyBudgetSheet({ isOpen, onClose, currentAmount, effectiveMo
     const { error } = await supabase
       .from('budgets')
       .upsert(
-        { couple_id: couple!.couple_id, user_id: user!.id, monthly_amount: amount, effective_month: `${effectiveMonth}-01` },
-        { onConflict: 'couple_id,user_id,effective_month' },
+        { user_id: user!.id, monthly_amount: amount, effective_month: `${effectiveMonth}-01` },
+        { onConflict: 'user_id,effective_month' },
       )
     setSaving(false)
     if (error) {

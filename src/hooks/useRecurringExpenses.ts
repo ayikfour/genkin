@@ -6,7 +6,7 @@ function sortByDueDate(a: RecurringExpense, b: RecurringExpense) {
   return a.next_due_date.localeCompare(b.next_due_date)
 }
 
-export function useRecurringExpenses(coupleId: string | undefined) {
+export function useRecurringExpenses(spaceId: string | undefined) {
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -23,13 +23,13 @@ export function useRecurringExpenses(coupleId: string | undefined) {
   }
 
   useEffect(() => {
-    if (!coupleId) return
+    if (!spaceId) return
     let mounted = true
 
     fetchRecurringExpenses()
 
     const channel = supabase
-      .channel(`recurring-expenses-${coupleId}`)
+      .channel(`recurring-expenses-${spaceId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'recurring_expenses' },
         ({ new: row }) => {
           if (!mounted) return
@@ -54,7 +54,7 @@ export function useRecurringExpenses(coupleId: string | undefined) {
       .subscribe()
 
     return () => { mounted = false; supabase.removeChannel(channel) }
-  }, [coupleId])
+  }, [spaceId])
 
   return { recurringExpenses, loading, refetch: fetchRecurringExpenses }
 }

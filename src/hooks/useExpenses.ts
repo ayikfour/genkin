@@ -6,7 +6,7 @@ function sortDesc(a: Expense, b: Expense) {
   return b.expense_date.localeCompare(a.expense_date) || b.created_at.localeCompare(a.created_at)
 }
 
-export function useExpenses(coupleId: string | undefined) {
+export function useExpenses(spaceId: string | undefined) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -23,7 +23,7 @@ export function useExpenses(coupleId: string | undefined) {
   }
 
   useEffect(() => {
-    if (!coupleId) return
+    if (!spaceId) return
     let mounted = true
 
     supabase
@@ -36,7 +36,7 @@ export function useExpenses(coupleId: string | undefined) {
       })
 
     const channel = supabase
-      .channel(`expenses-${coupleId}`)
+      .channel(`expenses-${spaceId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' },
         ({ new: row }) => {
           // Mutations already call refetch() right after they resolve, which can
@@ -51,7 +51,7 @@ export function useExpenses(coupleId: string | undefined) {
       .subscribe()
 
     return () => { mounted = false; supabase.removeChannel(channel) }
-  }, [coupleId])
+  }, [spaceId])
 
   return { expenses, loading, refetch: fetchExpenses }
 }

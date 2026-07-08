@@ -1,6 +1,5 @@
 export interface Expense {
   id: string
-  couple_id: string
   paid_by: string | null
   paid_by_label: string | null
   logged_by: string
@@ -16,7 +15,6 @@ export type RecurrenceFrequency = 'weekly' | 'monthly' | 'yearly'
 
 export interface RecurringExpense {
   id: string
-  couple_id: string
   paid_by: string
   created_by: string
   amount: number
@@ -35,13 +33,12 @@ export interface Category {
   icon: string
 }
 
-export interface CoupleMember {
+export interface SpaceMember {
   user_id: string
   display_name: string
 }
 
 export interface Budget {
-  couple_id: string
   user_id: string
   effective_month: string
   monthly_amount: number

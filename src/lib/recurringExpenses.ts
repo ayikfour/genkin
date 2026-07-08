@@ -7,22 +7,21 @@ import type { RecurringExpense } from '../types'
 // 0006_recurring_expenses.sql.
 const UNIQUE_VIOLATION = '23505'
 
-// Guards against a runaway loop if a couple's template goes unvisited for a
+// Guards against a runaway loop if a template goes unvisited for a
 // very long time (shouldn't happen in practice, but a lazy client-side
 // scheduler has no other backstop).
 const MAX_OCCURRENCES_PER_TEMPLATE = 500
 
 // Materializes any recurring-expense occurrences that have come due since
-// the last time either partner opened the app, as real `expenses` rows.
-// There's no scheduled-job infra in this app (see CLAUDE.md), so this runs
-// once per session instead, from AuthContext once the couple is known.
-export async function materializeDueRecurringExpenses(coupleId: string): Promise<void> {
+// the last time either space member opened the app, as real `expenses`
+// rows. There's no scheduled-job infra in this app (see CLAUDE.md), so this
+// runs once per session instead, from AuthContext once the space is known.
+export async function materializeDueRecurringExpenses(): Promise<void> {
   const today = toISODateLocal(new Date())
 
   const { data: due } = await supabase
     .from('recurring_expenses')
     .select('*')
-    .eq('couple_id', coupleId)
     .eq('active', true)
     .lte('next_due_date', today)
 
@@ -34,7 +33,6 @@ export async function materializeDueRecurringExpenses(coupleId: string): Promise
 
     while (nextDue <= today && iterations < MAX_OCCURRENCES_PER_TEMPLATE) {
       const { error } = await supabase.from('expenses').insert({
-        couple_id: template.couple_id,
         paid_by: template.paid_by,
         logged_by: template.created_by,
         amount: template.amount,

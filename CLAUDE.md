@@ -1,9 +1,12 @@
 # Couple's Expense Tracker
 
-A shared expense tracker for two people to log spending into one collaborative
-log and view simple summaries. Installable as a PWA. Must run on $0/month
-infrastructure (free tiers only) — flag anything that risks incurring cost
-before adding it.
+An expense tracker for logging spending and viewing simple summaries,
+solo by default and shareable with one other person. Every user always
+belongs to exactly one "space" — a brand-new user gets their own solo space
+immediately, no setup choice required; inviting a partner turns it into a
+2-person space at any time from Settings. Installable as a PWA. Must run on
+$0/month infrastructure (free tiers only) — flag anything that risks
+incurring cost before adding it.
 
 Full product rationale and feature list: see `expense-tracker-prd.md`.
 Design tokens (source of truth for all styling): see `design.md`.
@@ -18,13 +21,25 @@ Design tokens (source of truth for all styling): see `design.md`.
 
 ## Architecture at a glance
 
-- Two people share one "couple" workspace. Each has their own login;
-  `couple_members` links `user_id` to `couple_id`.
-- All expense data lives in one `expenses` table scoped by `couple_id`.
-- Row Level Security (RLS) enforces that scoping at the database level —
-  every query filters to the logged-in user's `couple_id` automatically.
-  Never bypass RLS with a service-role key from client-side code.
-- Single currency. No multi-currency handling needed unless this changes.
+- Every user always belongs to exactly one **space** (`space_members` links
+  `user_id` to `space_id`, one row per user at all times). A space with one
+  member is "solo"; a space with two is a couple — there's no separate
+  create/join state or creator/owner asymmetry, and (for now) a space is
+  capped at 2 members.
+- `expenses`, `budgets`, and `recurring_expenses` are **not** scoped by
+  `space_id` — that column doesn't exist on them. Each row is owned by a
+  user instead (`paid_by`, falling back to `logged_by` for legacy
+  CSV-import rows with no `paid_by` yet; `user_id` directly for budgets;
+  `paid_by` directly for recurring expenses). Row Level Security grants
+  access to your own rows plus rows owned by anyone currently in your
+  space, via the `is_space_mate()` helper — never bypass RLS with a
+  service-role key from client-side code.
+- This ownership model is why leaving or switching spaces
+  (`leave_space()` / `join_space()` RPCs) never needs to copy or move any
+  expense/budget/recurring data — a user's own rows are always theirs;
+  only who else can see them changes.
+- Single currency per space. No multi-currency handling needed unless this
+  changes.
 
 ## Rules
 

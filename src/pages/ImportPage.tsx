@@ -8,7 +8,7 @@ import { Check, UploadSimple } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useCategories } from '../hooks/useCategories'
-import { useCoupleMembers } from '../hooks/useCoupleMembers'
+import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { getCurrency, parseCurrencyAmount } from '../lib/currencies'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import { toISODateLocal } from '../lib/dates'
@@ -124,10 +124,10 @@ function dupKey(row: {
 
 export function ImportPage() {
   const navigate = useNavigate()
-  const { user, couple } = useAuth()
+  const { user, space } = useAuth()
   const categories = useCategories()
-  const members = useCoupleMembers(couple?.couple_id)
-  const currency = getCurrency(couple?.currency_code ?? 'IDR')
+  const members = useSpaceMembers(space?.space_id)
+  const currency = getCurrency(space?.currency_code ?? 'IDR')
 
   const [step, setStep] = useState<Step>('upload')
   const [rawRows, setRawRows] = useState<RawRow[]>([])
@@ -185,7 +185,7 @@ export function ImportPage() {
   }
 
   async function handleConfigure() {
-    if (!selfName || tooManyPayers || !couple) return
+    if (!selfName || tooManyPayers || !space) return
     setChecking(true)
 
     const otherRaw = distinctPayers.find(p => p.toLowerCase() !== selfName.toLowerCase()) ?? null
@@ -243,7 +243,6 @@ export function ImportPage() {
       const { data: existing } = await supabase
         .from('expenses')
         .select('expense_date, amount, category, description, paid_by, paid_by_label')
-        .eq('couple_id', couple.couple_id)
         .in('expense_date', distinctDates)
       for (const row of existing ?? []) {
         seenKeys.add(
@@ -322,12 +321,11 @@ export function ImportPage() {
   }, [rows])
 
   async function handleCommit() {
-    if (!couple || readyRows.length === 0) return
+    if (!space || readyRows.length === 0) return
     setCommitting(true)
 
     for (let i = 0; i < readyRows.length; i += CHUNK_SIZE) {
       const chunk = readyRows.slice(i, i + CHUNK_SIZE).map(r => ({
-        couple_id: couple.couple_id,
         paid_by: r.paid_by,
         paid_by_label: r.paid_by_label,
         logged_by: user!.id,
@@ -407,7 +405,7 @@ export function ImportPage() {
             </div>
             {tooManyPayers && (
               <p className="text-sm text-destructive">
-                This file has more than 2 different "paid by" names — a couple can only have 2 members. Fix the
+                This file has more than 2 different "paid by" names — a space can only have 2 members. Fix the
                 file and re-upload.
               </p>
             )}
@@ -429,7 +427,7 @@ export function ImportPage() {
               )}
             </p>
             <p className="font-heading text-lg font-medium text-foreground">
-              {formatCurrency(readyTotal, couple?.currency_code)}
+              {formatCurrency(readyTotal, space?.currency_code)}
             </p>
             <p className="text-xs text-muted-foreground">
               Possible duplicates are unchecked by default — review before importing.
@@ -448,7 +446,7 @@ export function ImportPage() {
                       {label}
                     </span>
                     <span className="font-heading text-xs text-muted-foreground">
-                      {formatCurrency(dayTotal, couple?.currency_code)}
+                      {formatCurrency(dayTotal, space?.currency_code)}
                     </span>
                   </div>
 
@@ -539,7 +537,7 @@ export function ImportPage() {
                           </div>
 
                           <span className="font-heading shrink-0 text-base font-medium text-foreground">
-                            {row.amount ? formatCurrency(row.amount, couple?.currency_code) : row.raw.amount}
+                            {row.amount ? formatCurrency(row.amount, space?.currency_code) : row.raw.amount}
                           </span>
                         </div>
                       )

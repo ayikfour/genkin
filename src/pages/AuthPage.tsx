@@ -8,14 +8,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 type Mode = 'password' | 'code'
 
 export function AuthPage() {
-  const { session, couple } = useAuth()
+  const { session } = useAuth()
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('password')
   const [suppressRedirect, setSuppressRedirect] = useState(false)
 
   useEffect(() => {
-    if (session && !suppressRedirect) navigate(couple ? '/log' : '/onboarding', { replace: true })
-  }, [session, couple, navigate, suppressRedirect])
+    if (session && !suppressRedirect) navigate('/log', { replace: true })
+  }, [session, navigate, suppressRedirect])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
@@ -27,7 +27,7 @@ export function AuthPage() {
             Genkin
           </h1>
           <p className="text-sm text-muted-foreground">
-            Shared expenses for two
+            Track your spending, share when you want
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAppSound } from '../hooks/useAppSound'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
-import { useCoupleMembers } from '../hooks/useCoupleMembers'
+import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
 import { useBudgets } from '../hooks/useBudgets'
 import { useExpenseFilters } from '../contexts/ExpenseFiltersContext'
@@ -36,13 +36,13 @@ function TooltipBox({ active, payload, label, currencyCode }: { active?: boolean
 }
 
 export function DashboardPage() {
-  const { user, couple } = useAuth()
+  const { user, space } = useAuth()
   const playSound = useAppSound()
-  const { expenses, refetch } = useExpenses(couple?.couple_id)
+  const { expenses, refetch } = useExpenses(space?.space_id)
   const categories = useCategories()
-  const members = useCoupleMembers(couple?.couple_id)
-  const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
-  const { budgets, refetch: refetchBudgets } = useBudgets(couple?.couple_id)
+  const members = useSpaceMembers(space?.space_id)
+  const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(space?.space_id)
+  const { budgets, refetch: refetchBudgets } = useBudgets(space?.space_id)
   const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy, setFilters, activeFilterCount } = useExpenseFilters()
 
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -50,7 +50,7 @@ export function DashboardPage() {
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false)
 
   const now = useMemo(() => new Date(), [])
-  const currencyCode = couple?.currency_code ?? DEFAULT_CURRENCY_CODE
+  const currencyCode = space?.currency_code ?? DEFAULT_CURRENCY_CODE
 
   const availableMonths = useMemo(() => {
     const set = new Set(expenses.map(e => e.expense_date.slice(0, 7)))
@@ -239,12 +239,14 @@ export function DashboardPage() {
                       <AnimatedAmount amount={youTotal} currencyCode={currencyCode} /> / {formatCurrency(youBudget, currencyCode)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground">{partner?.display_name ?? 'Partner'}</span>
-                    <span className="text-muted-foreground">
-                      <AnimatedAmount amount={partnerTotal} currencyCode={currencyCode} /> / {formatCurrency(partnerBudget, currencyCode)}
-                    </span>
-                  </div>
+                  {partner && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">{partner.display_name}</span>
+                      <span className="text-muted-foreground">
+                        <AnimatedAmount amount={partnerTotal} currencyCode={currencyCode} /> / {formatCurrency(partnerBudget, currencyCode)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -316,7 +318,9 @@ export function DashboardPage() {
             <div className="mt-3.5">
               <div className="mb-2 flex justify-between text-xs">
                 <span className="font-medium text-foreground">You · {formatCurrency(youTotal, currencyCode)}</span>
-                <span className="font-medium text-muted-foreground">{partner?.display_name ?? 'Partner'} · {formatCurrency(partnerTotal, currencyCode)}</span>
+                {partner && (
+                  <span className="font-medium text-muted-foreground">{partner.display_name} · {formatCurrency(partnerTotal, currencyCode)}</span>
+                )}
               </div>
               <div className="flex h-6 bg-muted">
                 <div className="bg-foreground" style={{ width: `${youPct}%` }} />

@@ -8,7 +8,7 @@ import { formatDateLabel } from '../lib/format'
 import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { parseISODateLocal, toISODateLocal, nextOccurrence } from '../lib/dates'
 import { appendDigits, backspace, unitsToAmount, amountToUnits } from '../lib/amountUnits'
-import type { Expense, Category, CoupleMember, RecurrenceFrequency, RecurringExpense } from '../types'
+import type { Expense, Category, SpaceMember, RecurrenceFrequency, RecurringExpense } from '../types'
 import {
   Sheet,
   SheetContent,
@@ -27,7 +27,7 @@ interface Props {
   onSaved: (action: 'added' | 'updated' | 'deleted') => void
   expense?: Expense | null
   categories: Category[]
-  members: CoupleMember[]
+  members: SpaceMember[]
   recurringExpenses: RecurringExpense[]
 }
 
@@ -44,10 +44,10 @@ const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string }[] = [
 ]
 
 export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories, members, recurringExpenses }: Props) {
-  const { user, couple } = useAuth()
+  const { user, space } = useAuth()
   const playSound = useAppSound()
   const isEdit = !!expense
-  const currency = getCurrency(couple?.currency_code ?? DEFAULT_CURRENCY_CODE)
+  const currency = getCurrency(space?.currency_code ?? DEFAULT_CURRENCY_CODE)
 
   const [amountUnits, setAmountUnits] = useState('0')
   const [category, setCategory] = useState('')
@@ -106,7 +106,6 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       const { data: template, error: templateErr } = await supabase
         .from('recurring_expenses')
         .insert({
-          couple_id: couple!.couple_id,
           paid_by: paidBy,
           created_by: user!.id,
           amount: amt,
@@ -124,7 +123,6 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
     }
 
     const payload = {
-      couple_id: couple!.couple_id,
       paid_by: paidBy,
       logged_by: user!.id,
       amount: amt,
@@ -162,6 +160,11 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
     if (other?.id) { playSound('select'); setPaidBy(other.id) }
   }
 
+  // Solo (no partner yet): nothing to toggle, so the segment doesn't render
+  // at all rather than showing a permanently-disabled "Partner" button.
+  const showPayerSegment = !!partner
+  const dateHasFollowingSegment = showPayerSegment || !alreadyLinked
+
   const selectedCategory = categories.find(cat => cat.name === category)
 
   return (
@@ -198,7 +201,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
             <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-border">
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
-                  <button type="button" className={`${SEGMENT_CLASS} border-r border-border`}>
+                  <button type="button" className={dateHasFollowingSegment ? `${SEGMENT_CLASS} border-r border-border` : SEGMENT_CLASS}>
                     {formatDateLabel(date)}
                     <CaretDown className="size-3.5 text-muted-foreground" />
                   </button>
@@ -214,15 +217,16 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
                   />
                 </PopoverContent>
               </Popover>
-              <button
-                type="button"
-                onClick={togglePaidBy}
-                disabled={!partner?.user_id}
-                className={alreadyLinked ? SEGMENT_CLASS : `${SEGMENT_CLASS} border-r border-border`}
-              >
-                {currentPayerLabel}
-                <CaretRight className="size-3.5 text-muted-foreground" />
-              </button>
+              {showPayerSegment && (
+                <button
+                  type="button"
+                  onClick={togglePaidBy}
+                  className={alreadyLinked ? SEGMENT_CLASS : `${SEGMENT_CLASS} border-r border-border`}
+                >
+                  {currentPayerLabel}
+                  <CaretRight className="size-3.5 text-muted-foreground" />
+                </button>
+              )}
               {!alreadyLinked && (
                 <Popover open={recurringPickerOpen} onOpenChange={setRecurringPickerOpen}>
                   <PopoverTrigger asChild>

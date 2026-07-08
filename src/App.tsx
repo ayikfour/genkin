@@ -6,7 +6,6 @@ import { AppSoundProvider } from './contexts/SoundContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { TopNav } from './components/TopNav'
 import { AuthPage } from './pages/AuthPage'
-import { OnboardingPage } from './pages/OnboardingPage'
 import { LogPage } from './pages/LogPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -35,7 +34,6 @@ export default function App() {
             <Toaster theme="dark" position="top-center" />
             <Routes>
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
               <Route
                 path="/log"
                 element={<ProtectedRoute><AppShell><LogPage /></AppShell></ProtectedRoute>}

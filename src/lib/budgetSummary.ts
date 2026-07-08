@@ -1,6 +1,6 @@
 import { getDaysInMonth } from 'date-fns'
 import { toISODateLocal } from './dates'
-import type { Budget, CoupleMember, Expense } from '../types'
+import type { Budget, SpaceMember, Expense } from '../types'
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1)
@@ -35,7 +35,7 @@ export interface BudgetSummary {
   dailyPace: number | null
   budgetUsedPct: number
   overBudget: boolean
-  partner: CoupleMember | undefined
+  partner: SpaceMember | undefined
   youTotal: number
   partnerTotal: number
   youBudget: number
@@ -58,7 +58,7 @@ export function computeBudgetSummary({
 }: {
   expenses: Expense[]
   budgets: Budget[]
-  members: CoupleMember[]
+  members: SpaceMember[]
   userId: string | undefined
   now: Date
   summaryMonth?: Date

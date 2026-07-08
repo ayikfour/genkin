@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Check } from '@phosphor-icons/react'
 import { useAppSound } from '../hooks/useAppSound'
-import type { Category, CoupleMember } from '../types'
+import type { Category, SpaceMember } from '../types'
 import {
   Sheet,
   SheetContent,
@@ -15,7 +15,7 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   categories: Category[]
-  members: CoupleMember[]
+  members: SpaceMember[]
   currentUserId: string | undefined
   selectedCategories: string[]
   selectedPayer: string | null

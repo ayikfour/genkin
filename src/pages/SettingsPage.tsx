@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { useBudgets } from '../hooks/useBudgets'
+import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { useSoundPreference } from '../hooks/useSoundPreference'
 import { useSoundVolume } from '../hooks/useSoundVolume'
 import { useAppSound } from '../hooks/useAppSound'
@@ -16,13 +17,24 @@ import { CurrencyDrawer } from '../components/CurrencyDrawer'
 import { PasswordSheet } from '../components/PasswordSheet'
 import { ChangeUsernameSheet } from '../components/ChangeUsernameSheet'
 import { MonthlyBudgetSheet } from '../components/MonthlyBudgetSheet'
+import { SwitchSpaceSheet } from '../components/SwitchSpaceSheet'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
 import { Check, CaretRight, Copy } from '@phosphor-icons/react'
 
 export function SettingsPage() {
   const navigate = useNavigate()
-  const { user, couple, hasPassword, refreshCouple, signOut } = useAuth()
-  const { budgets, refetch: refetchBudgets } = useBudgets(couple?.couple_id)
+  const { user, space, hasPassword, refreshSpace, signOut } = useAuth()
+  const { budgets, refetch: refetchBudgets } = useBudgets(space?.space_id)
+  const members = useSpaceMembers(space?.space_id)
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundPreference()
   const { volume, setVolume } = useSoundVolume()
   const playSound = useAppSound()
@@ -32,20 +44,23 @@ export function SettingsPage() {
   const [passwordSheetOpen, setPasswordSheetOpen] = useState(false)
   const [usernameSheetOpen, setUsernameSheetOpen] = useState(false)
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false)
+  const [switchSpaceSheetOpen, setSwitchSpaceSheetOpen] = useState(false)
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
-  const currencyCode = couple?.currency_code ?? DEFAULT_CURRENCY_CODE
+  const currencyCode = space?.currency_code ?? DEFAULT_CURRENCY_CODE
   const currentMonth = toISODateLocal(new Date()).slice(0, 7)
   const myBudget = effectiveBudgetFor(budgets, user?.id, new Date())
 
   useEffect(() => {
-    if (!couple) return
+    if (!space) return
     supabase
-      .from('couples')
+      .from('spaces')
       .select('invite_code')
-      .eq('id', couple.couple_id)
+      .eq('id', space.space_id)
       .single()
       .then(({ data }) => setInviteCode(data?.invite_code ?? null))
-  }, [couple?.couple_id])
+  }, [space?.space_id])
 
   async function copyCode() {
     if (!inviteCode) return
@@ -56,18 +71,31 @@ export function SettingsPage() {
   }
 
   async function selectCurrency(code: string) {
-    if (!couple) return
+    if (!space) return
     const { data, error } = await supabase
-      .from('couples')
+      .from('spaces')
       .update({ currency_code: code })
-      .eq('id', couple.couple_id)
+      .eq('id', space.space_id)
       .select()
     if (error || !data?.length) {
       playSound('warning')
       toast('Could not update currency')
       return
     }
-    await refreshCouple()
+    await refreshSpace()
+  }
+
+  async function handleLeave() {
+    setLeaving(true)
+    const { error } = await supabase.rpc('leave_space')
+    setLeaving(false)
+    if (error) {
+      toast('Could not leave this space')
+      return
+    }
+    await refreshSpace()
+    setLeaveDialogOpen(false)
+    toast("You've left the space")
   }
 
   return (
@@ -76,22 +104,22 @@ export function SettingsPage() {
         {/* Account */}
         <div className="border-b border-border px-4 py-3.5 last:border-b-0">
           <p className="text-base text-foreground">{user?.email}</p>
-          {couple && (
+          {space && (
             <p className="text-sm text-muted-foreground">
-              Signed in as <span className="font-medium text-foreground">{couple.display_name}</span>
+              Signed in as <span className="font-medium text-foreground">{space.display_name}</span>
             </p>
           )}
         </div>
 
         {/* Your name */}
-        {couple && (
+        {space && (
           <button
             onClick={() => { playSound('click'); setUsernameSheetOpen(true) }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
           >
             <span className="text-base text-foreground">Your name</span>
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="text-sm">{couple.display_name}</span>
+              <span className="text-sm">{space.display_name}</span>
               <CaretRight className="size-3.5" />
             </span>
           </button>
@@ -107,7 +135,7 @@ export function SettingsPage() {
         </button>
 
         {/* Currency */}
-        {couple && (
+        {space && (
           <button
             onClick={() => { playSound('click'); setCurrencyDrawerOpen(true) }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
@@ -115,7 +143,7 @@ export function SettingsPage() {
             <span className="text-base text-foreground">Currency</span>
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <span className="text-sm">
-                {getCurrency(couple.currency_code).symbol} {getCurrency(couple.currency_code).name}
+                {getCurrency(space.currency_code).symbol} {getCurrency(space.currency_code).name}
               </span>
               <CaretRight className="size-3.5" />
             </span>
@@ -123,7 +151,7 @@ export function SettingsPage() {
         )}
 
         {/* Monthly budget */}
-        {couple && (
+        {space && (
           <button
             onClick={() => { playSound('click'); setBudgetSheetOpen(true) }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
@@ -161,7 +189,7 @@ export function SettingsPage() {
         </div>
 
         {/* Invite code */}
-        {couple && (
+        {space && (
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5 last:border-b-0">
             <span className="text-base text-foreground">Invite code</span>
             <div className="flex items-center gap-3">
@@ -188,12 +216,32 @@ export function SettingsPage() {
         )}
 
         {/* Import */}
-        {couple && (
+        {space && (
           <button
             onClick={() => { playSound('click'); navigate('/import') }}
             className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
           >
             <span className="text-base text-foreground">Import expenses</span>
+            <CaretRight className="size-3.5 text-muted-foreground" />
+          </button>
+        )}
+
+        {/* Join a different space */}
+        <button
+          onClick={() => { playSound('click'); setSwitchSpaceSheetOpen(true) }}
+          className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
+        >
+          <span className="text-base text-foreground">Join a different space</span>
+          <CaretRight className="size-3.5 text-muted-foreground" />
+        </button>
+
+        {/* Leave this space */}
+        {members.length > 1 && (
+          <button
+            onClick={() => { playSound('click'); setLeaveDialogOpen(true) }}
+            className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left last:border-b-0"
+          >
+            <span className="text-base text-destructive">Leave this space</span>
             <CaretRight className="size-3.5 text-muted-foreground" />
           </button>
         )}
@@ -210,15 +258,15 @@ export function SettingsPage() {
         mode={hasPassword ? 'change' : 'create'}
       />
 
-      {couple && (
+      {space && (
         <ChangeUsernameSheet
           isOpen={usernameSheetOpen}
           onClose={() => setUsernameSheetOpen(false)}
-          currentName={couple.display_name}
+          currentName={space.display_name}
         />
       )}
 
-      {couple && user && (
+      {space && user && (
         <MonthlyBudgetSheet
           isOpen={budgetSheetOpen}
           onClose={() => setBudgetSheetOpen(false)}
@@ -228,14 +276,40 @@ export function SettingsPage() {
         />
       )}
 
-      {couple && (
+      {space && (
         <CurrencyDrawer
           isOpen={currencyDrawerOpen}
           onClose={() => setCurrencyDrawerOpen(false)}
-          selectedCode={couple.currency_code}
+          selectedCode={space.currency_code}
           onSelect={selectCurrency}
         />
       )}
+
+      <SwitchSpaceSheet
+        isOpen={switchSpaceSheetOpen}
+        onClose={() => setSwitchSpaceSheetOpen(false)}
+      />
+
+      <Dialog open={leaveDialogOpen} onOpenChange={open => !open && setLeaveDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave this space?</DialogTitle>
+            <DialogDescription>
+              You'll land in a new solo space with your own expenses, budget,
+              and recurring expenses still intact. The space you're leaving
+              keeps its own history — nothing is deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleLeave} disabled={leaving}>
+              {leaving ? 'Leaving…' : 'Leave'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabase'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { materializeDueRecurringExpenses } from '../lib/recurringExpenses'
 
-interface CoupleInfo {
-  couple_id: string
+interface SpaceInfo {
+  space_id: string
   display_name: string
   currency_code: string
 }
@@ -13,33 +13,56 @@ interface CoupleInfo {
 interface AuthContextValue {
   session: Session | null
   user: User | null
-  couple: CoupleInfo | null
+  space: SpaceInfo | null
   hasPassword: boolean
   loading: boolean
   signOut: () => Promise<void>
-  refreshCouple: () => Promise<void>
+  refreshSpace: () => Promise<void>
   refreshHasPassword: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+// Default display name for a silently auto-provisioned solo space —
+// just the email's local part; the user can rename anytime via
+// Settings → "Your name".
+function defaultDisplayName(email: string | undefined) {
+  return email?.split('@')[0] ?? 'You'
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [couple, setCouple] = useState<CoupleInfo | null>(null)
+  const [space, setSpace] = useState<SpaceInfo | null>(null)
   const [hasPassword, setHasPassword] = useState(false)
   const [loading, setLoading] = useState(true)
-  const materializedForCoupleId = useRef<string | null>(null)
+  const materializedForSpaceId = useRef<string | null>(null)
 
-  async function fetchCouple(userId: string) {
+  async function fetchSpace(userId: string) {
     const { data } = await supabase
-      .from('couple_members')
-      .select('couple_id, display_name, couples(currency_code)')
+      .from('space_members')
+      .select('space_id, display_name, spaces(currency_code)')
       .eq('user_id', userId)
       .maybeSingle()
-    if (!data) { setCouple(null); return }
-    const couples = data.couples as { currency_code: string } | { currency_code: string }[] | null
-    const currency_code = (Array.isArray(couples) ? couples[0]?.currency_code : couples?.currency_code) ?? DEFAULT_CURRENCY_CODE
-    setCouple({ couple_id: data.couple_id, display_name: data.display_name, currency_code })
+    if (!data) { setSpace(null); return }
+    const spaces = data.spaces as { currency_code: string } | { currency_code: string }[] | null
+    const currency_code = (Array.isArray(spaces) ? spaces[0]?.currency_code : spaces?.currency_code) ?? DEFAULT_CURRENCY_CODE
+    setSpace({ space_id: data.space_id, display_name: data.display_name, currency_code })
+  }
+
+  // Every user always belongs to exactly one space — a brand-new user
+  // gets a solo one silently, rather than being forced through a
+  // Create/Join choice before they can use the app.
+  async function ensureSpace(user: User) {
+    await fetchSpace(user.id)
+    const { data } = await supabase
+      .from('space_members')
+      .select('space_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (data) return
+    const name = defaultDisplayName(user.email)
+    await supabase.rpc('create_space', { space_name: `${name}'s space`, display_name: name })
+    await fetchSpace(user.id)
   }
 
   async function fetchHasPassword() {
@@ -51,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       if (data.session?.user) {
-        Promise.all([fetchCouple(data.session.user.id), fetchHasPassword()]).finally(() => setLoading(false))
+        Promise.all([ensureSpace(data.session.user), fetchHasPassword()]).finally(() => setLoading(false))
       } else {
         setLoading(false)
       }
@@ -60,10 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s)
       if (s?.user) {
-        fetchCouple(s.user.id)
+        ensureSpace(s.user)
         fetchHasPassword()
       } else {
-        setCouple(null)
+        setSpace(null)
         setHasPassword(false)
       }
     })
@@ -71,26 +94,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // Runs once per couple per session — there's no scheduled-job infra in
+  // Runs once per space per session — there's no scheduled-job infra in
   // this app, so recurring expenses are materialized lazily whenever
   // someone opens it. See src/lib/recurringExpenses.ts.
   useEffect(() => {
-    if (!couple?.couple_id || materializedForCoupleId.current === couple.couple_id) return
-    materializedForCoupleId.current = couple.couple_id
-    materializeDueRecurringExpenses(couple.couple_id)
-  }, [couple?.couple_id])
+    if (!space?.space_id || materializedForSpaceId.current === space.space_id) return
+    materializedForSpaceId.current = space.space_id
+    materializeDueRecurringExpenses()
+  }, [space?.space_id])
 
   async function signOut() {
     await supabase.auth.signOut()
   }
 
-  async function refreshCouple() {
+  async function refreshSpace() {
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) await fetchCouple(user.id)
+    if (user) await fetchSpace(user.id)
   }
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, couple, hasPassword, loading, signOut, refreshCouple, refreshHasPassword: fetchHasPassword }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, space, hasPassword, loading, signOut, refreshSpace, refreshHasPassword: fetchHasPassword }}>
       {children}
     </AuthContext.Provider>
   )

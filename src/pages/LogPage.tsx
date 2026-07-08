@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
 import { useCategories } from '../hooks/useCategories'
-import { useCoupleMembers } from '../hooks/useCoupleMembers'
+import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
 import { useBudgets } from '../hooks/useBudgets'
 import { useExpenseFilters } from '../contexts/ExpenseFiltersContext'
@@ -38,12 +38,12 @@ const TOAST_COPY = { added: 'Expense added', updated: 'Expense updated', deleted
 
 export function LogPage() {
   const navigate = useNavigate()
-  const { user, couple } = useAuth()
-  const { expenses, loading, refetch } = useExpenses(couple?.couple_id)
+  const { user, space } = useAuth()
+  const { expenses, loading, refetch } = useExpenses(space?.space_id)
   const categories = useCategories()
-  const members = useCoupleMembers(couple?.couple_id)
-  const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(couple?.couple_id)
-  const { budgets, loading: budgetsLoading } = useBudgets(couple?.couple_id)
+  const members = useSpaceMembers(space?.space_id)
+  const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(space?.space_id)
+  const { budgets, loading: budgetsLoading } = useBudgets(space?.space_id)
   const playSound = useAppSound()
 
   const now = useMemo(() => new Date(), [])
@@ -161,7 +161,7 @@ export function LogPage() {
               <div>
                 <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">Today</p>
                 <p className="font-heading text-3xl font-medium text-foreground">
-                  <AnimatedAmount amount={summary.todaySpent} currencyCode={couple?.currency_code} />
+                  <AnimatedAmount amount={summary.todaySpent} currencyCode={space?.currency_code} />
                 </p>
               </div>
               {summary.maxSpendToday !== null && (
@@ -170,8 +170,8 @@ export function LogPage() {
                   style={{ color: summary.todayOverBudget ? 'var(--color-danger)' : 'var(--color-success)' }}
                 >
                   {summary.todayOverBudget
-                    ? <>Over by <AnimatedAmount amount={Math.abs(summary.maxSpendToday - summary.todaySpent)} currencyCode={couple?.currency_code} /></>
-                    : <><AnimatedAmount amount={summary.maxSpendToday - summary.todaySpent} currencyCode={couple?.currency_code} /> left today</>}
+                    ? <>Over by <AnimatedAmount amount={Math.abs(summary.maxSpendToday - summary.todaySpent)} currencyCode={space?.currency_code} /></>
+                    : <><AnimatedAmount amount={summary.maxSpendToday - summary.todaySpent} currencyCode={space?.currency_code} /> left today</>}
                 </span>
               )}
             </div>
@@ -179,7 +179,7 @@ export function LogPage() {
             {summary.maxSpendToday !== null && (
               <>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Max today: <AnimatedAmount amount={summary.maxSpendToday} currencyCode={couple?.currency_code} />
+                  Max today: <AnimatedAmount amount={summary.maxSpendToday} currencyCode={space?.currency_code} />
                 </p>
                 <div className="mt-1.5">
                   <BudgetProgressBar usedPct={summary.todayUsedPct} overBudget={summary.todayOverBudget} />
@@ -189,11 +189,13 @@ export function LogPage() {
 
             <div className="mt-2 flex items-center justify-between text-xs">
               <span className="font-medium text-foreground">
-                You · <AnimatedAmount amount={summary.youTodaySpent} currencyCode={couple?.currency_code} />
+                You · <AnimatedAmount amount={summary.youTodaySpent} currencyCode={space?.currency_code} />
               </span>
-              <span className="font-medium text-muted-foreground">
-                {summary.partner?.display_name ?? 'Partner'} · <AnimatedAmount amount={summary.partnerTodaySpent} currencyCode={couple?.currency_code} />
-              </span>
+              {summary.partner && (
+                <span className="font-medium text-muted-foreground">
+                  {summary.partner.display_name} · <AnimatedAmount amount={summary.partnerTodaySpent} currencyCode={space?.currency_code} />
+                </span>
+              )}
             </div>
 
             <p className="mt-2 text-xs font-medium text-muted-foreground">View all stats →</p>
@@ -211,7 +213,7 @@ export function LogPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">Set a monthly budget</p>
                 <p className="text-xs text-muted-foreground">
-                  Track spending against a shared goal for you and your partner.
+                  Track spending against a monthly goal.
                 </p>
               </div>
               <CaretRight className="size-3.5 shrink-0 text-muted-foreground" />
@@ -222,7 +224,7 @@ export function LogPage() {
         <UpcomingRecurring
           recurringExpenses={recurringExpenses}
           categories={categories}
-          currencyCode={couple?.currency_code}
+          currencyCode={space?.currency_code}
           onStopped={refetchRecurring}
         />
 
@@ -258,7 +260,7 @@ export function LogPage() {
                     {formatDateLabel(date)}
                   </span>
                   <span className="font-heading text-xs text-muted-foreground">
-                    {formatCurrency(items.reduce((s, e) => s + e.amount, 0), couple?.currency_code)}
+                    {formatCurrency(items.reduce((s, e) => s + e.amount, 0), space?.currency_code)}
                   </span>
                 </div>
 
@@ -278,7 +280,7 @@ export function LogPage() {
                         expense={expense}
                         categoryIcon={catIcons[expense.category] ?? '📦'}
                         payerLabel={payerLabel}
-                        currencyCode={couple?.currency_code ?? DEFAULT_CURRENCY_CODE}
+                        currencyCode={space?.currency_code ?? DEFAULT_CURRENCY_CODE}
                         isOpen={openSwipeRowId === expense.id}
                         onOpenChange={open => setOpenSwipeRowId(open ? expense.id : null)}
                         onEdit={() => openEdit(expense)}
@@ -340,9 +342,9 @@ export function LogPage() {
             <DialogDescription>
               {deletingExpense && (
                 <>
-                  {deletingExpense.description || deletingExpense.category} · {formatCurrency(deletingExpense.amount, couple?.currency_code)}
+                  {deletingExpense.description || deletingExpense.category} · {formatCurrency(deletingExpense.amount, space?.currency_code)}
                   <br />
-                  This can't be undone, and removes it from your partner's log too.
+                  This can't be undone, and removes it from your space's log too.
                 </>
               )}
             </DialogDescription>
@@ -363,7 +365,7 @@ export function LogPage() {
           <DialogHeader>
             <DialogTitle>Delete {selectedIds.length} expenses?</DialogTitle>
             <DialogDescription>
-              This can't be undone, and removes them from your partner's log too.
+              This can't be undone, and removes them from your space's log too.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

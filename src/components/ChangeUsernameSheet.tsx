@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ChangeUsernameSheet({ isOpen, onClose, currentName }: Props) {
-  const { couple, user, refreshCouple } = useAuth()
+  const { space, user, refreshSpace } = useAuth()
   const [name, setName] = useState(currentName)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -26,15 +26,15 @@ export function ChangeUsernameSheet({ isOpen, onClose, currentName }: Props) {
   }
 
   async function handleSave() {
-    if (!couple || !user) return
+    if (!space || !user) return
     const trimmed = name.trim()
     if (!trimmed || trimmed === currentName) return
     setSaving(true)
     setError('')
     const { data, error } = await supabase
-      .from('couple_members')
+      .from('space_members')
       .update({ display_name: trimmed })
-      .eq('couple_id', couple.couple_id)
+      .eq('space_id', space.space_id)
       .eq('user_id', user.id)
       .select()
     setSaving(false)
@@ -42,7 +42,7 @@ export function ChangeUsernameSheet({ isOpen, onClose, currentName }: Props) {
       setError(error?.message || 'Could not update name. Try again.')
       return
     }
-    await refreshCouple()
+    await refreshSpace()
     toast('Name updated')
     handleClose()
   }
@@ -60,7 +60,7 @@ export function ChangeUsernameSheet({ isOpen, onClose, currentName }: Props) {
             <Input
               id="settings-display-name"
               type="text"
-              placeholder="How your partner sees you"
+              placeholder="Shown to anyone who joins your space"
               value={name}
               onChange={e => setName(e.target.value)}
               maxLength={32}
