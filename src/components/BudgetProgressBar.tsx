@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 interface BudgetProgressBarProps {
   usedPct: number
   overBudget: boolean
+  compact?: boolean
 }
 
 // Segment count AND per-segment width are solved together from the
@@ -19,7 +20,7 @@ function computeLayout(width: number) {
   return { segments, blockWidth }
 }
 
-export function BudgetProgressBar({ usedPct, overBudget }: BudgetProgressBarProps) {
+export function BudgetProgressBar({ usedPct, overBudget, compact }: BudgetProgressBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [{ segments, blockWidth }, setLayout] = useState({ segments: 1, blockWidth: 0 })
 
@@ -40,7 +41,7 @@ export function BudgetProgressBar({ usedPct, overBudget }: BudgetProgressBarProp
       {Array.from({ length: segments }, (_, i) => (
         <div
           key={i}
-          className="h-6 bg-muted"
+          className={compact ? 'h-1.5 bg-muted' : 'h-6 bg-muted'}
           style={{ width: blockWidth, background: i < filled ? color : undefined }}
         />
       ))}

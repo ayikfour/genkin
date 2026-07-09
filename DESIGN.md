@@ -630,7 +630,13 @@ patch has loaded. Seventeen of the preset's 26 sounds are wired, grouped by
 what they signal:
 
 - **Entry & outcomes** — `key-press` on every Amount Keypad digit/backspace
-  tap (`NumericKeypad.tsx`); `success` after an expense is added/updated
+  tap (`NumericKeypad.tsx`), each digit 0-9 detuned via
+  `PlayOptions.detune` on the shared sound to its own pitch — ten
+  semitone steps spanning just under an octave, all below the base tone
+  (-500 to -1400 cents) so the pad reads lower overall, shuffled across
+  the keys (not assigned in scale order) so sequential digits don't
+  produce a predictable ascending/descending run — while backspace keeps
+  the plain undetuned tone; `success` after an expense is added/updated
   (`LogPage.tsx`/`DashboardPage.tsx`'s `handleSaved`); `error` on inline
   validation/Supabase failures in the Add Expense save flow
   (`AddExpenseSheet.tsx`'s `handleSave`); `delete` on any confirmed expense
@@ -724,7 +730,30 @@ Budget section header row: title ("Budget") left, a right-aligned remaining/over
 
 **Empty state:** if neither partner has set a budget yet (`budgetTotal === 0`), the divider still separates the sections, but the budget half collapses to a single sentence ("Set a monthly budget in Settings to track it here") plus a text link to `/settings` — never a zeroed-out bar or `Rp 0 left`.
 
-**Log screen variant (`LogPage.tsx`):** a shrunk, tappable version of just the budget half — no MoM section, no per-person footer, no projection line. One row (`{spent} spent` left, remaining/over-budget badge right) plus the same Segmented Progress Bar at `segments={12}` instead of the Dashboard's default 20 (narrower visual weight for a card that's a secondary affordance, not the main content of the screen). The whole `Card` is one tap target (`role="button"`, `cursor-pointer`) that navigates to `/dashboard` — same "whole row/card is tappable" convention as Settings' Currency/Invite/Import rows. Pre-budget (`summary.maxSpendToday === null`, i.e. `budgetTotal === 0`), the budget-related rows (remaining/over-budget badge, "Max today" line, Segmented Progress Bar) are simply omitted rather than collapsing to a placeholder sentence — the card falls back to just its "Today" total and "View all stats →" line. The explicit nudge to actually set a budget lives one level down, in the standalone **Budget Reminder Card** below this one on the Log screen (see next section) rather than as inline copy inside this card.
+**Log screen variant (`LogPage.tsx`):** superseded by **Sticky Summary Card (Log screen)** below — the Log screen's overview is no longer a `Card` at all, and is no longer frozen to "Today." See that section for the current treatment.
+
+### Sticky Summary Card (Log screen)
+**Role:** The Log screen's tappable overview bar (replacing the old Log-screen variant of This Month + Budget Card, above) — `SummaryCard.tsx`, rendered from `LogPage.tsx`. As the user scrolls through the date-grouped expense list, the bar mirrors whichever day's section is currently in view, Google-Photos-date-bar style, instead of staying frozen to "Today."
+
+**Not a `Card`** — a full-bleed bar, edge to edge (`px-5` internal padding instead of the page's usual `px-5` outer margin, no rounded corners, no ring border), with the same translucent blurred backdrop `TopNav` uses (`bg-background/80 backdrop-blur-md`) instead of the opaque `bg-card` surface, plus a `border-b border-border` for separation — this keeps text legible over the scrolling list beneath it without looking like a floating card pinned at the screen edges. Header row: date label (small caps, muted) on the left, a trailing `CaretRight` chevron on the right signaling the whole bar is tappable — replacing the old "View all stats →" caption line entirely, matching the chevron convention on Settings' navigable rows and the Budget Reminder Card.
+
+**Two states**, swapped by pin state (see below), both the same `SummaryCard` component, same full-bleed/blur/chevron treatment — only size and pacing detail differ:
+- **Expanded** — the bar's natural, unscrolled position at the top of the page. Bigger Geist amount (`text-3xl`), pacing badge + "Max today" caption + Segmented Progress Bar (`segments={12}`, `compact` height variant — see below), You/Partner split row.
+- **Compact** — engaged once the bar has scrolled under `TopNav` and pinned there. Smaller amount (`text-xl`), tighter vertical rhythm throughout, the pacing badge collapsed to just its numeric text (no Segmented Progress Bar, no "Max today" caption) to keep the pinned bar's footprint small while scrollable content stays visible beneath it.
+
+**Segmented Progress Bar `compact` prop:** `BudgetProgressBar.tsx` takes an optional `compact?: boolean` that shrinks its block height from `h-6` to `h-1.5` — added specifically for this bar's tighter vertical rhythm without affecting the Dashboard's own (larger, non-compact) usage of the same component.
+
+**Sticky offset:** `position: sticky`, `top: calc(56px + var(--safe-top))` — 56px is `TopNav`'s actual rendered content height (`py-3.5` padding + an `icon-sm` button, 28px + 28px), not the 64px `AppShell`'s `<main>` assumes for its own padding-top. That 64px figure is stale there too, but harmlessly — it only leaves 8px of invisible extra whitespace at the top of every page. Reusing it here instead of the real 56px would leave an 8px seam between the nav and this bar with scrolled list content visible through it, so this bar intentionally uses its own correct constant (`NAV_HEIGHT` in `LogPage.tsx`) rather than matching `AppShell`'s. **z-index `40`** — between `TopNav`'s `50` and `BottomActionBar`'s `30`, so the nav always wins if they ever overlap during the scroll transition, and the bar always sits above the scrolling list content beneath it (implicit `z-0`).
+
+**Pin detection:** a zero-height sentinel `div` renders immediately above the sticky bar; an `IntersectionObserver` watches it (`rootMargin: '-1px 0px 0px 0px'`). Once the sentinel scrolls above the viewport top, `position: sticky` has engaged and the bar switches to compact — this is deliberately not scrollY-position math, since the bar's natural offset shifts depending on whether the Budget Reminder Card above it is rendered. While unpinned (resting at the top), the bar always shows "Today" unconditionally — active-date tracking (below) only takes over once pinned, so nothing changes before the user actually starts scrolling.
+
+**Active-date content:** a single `IntersectionObserver` watches every date-group header in the list *and* a sentinel just past the end of the list together, with its `rootMargin` top edge set to the live-measured bottom of the sticky bar (tracked via `ResizeObserver`, same pattern as Segmented Progress Bar's own width tracking). Both are observed by the same instance deliberately — with two separate observers, a single big scroll jump can fire them in either order and let the header logic overwrite the bottom-of-list fallback right after it runs. On every crossing, one callback recomputes everything directly from live positions rather than trusting which entry triggered it: if the end-of-list sentinel is on screen, the oldest date group is forced active (it can be too short to ever push its own header past the line, since there's no more content below it to scroll through); otherwise the header that most recently scrolled past the line is picked — more robust than a thin trigger-band check, which a fast/flick scroll can jump clean over without ever registering. Two content modes result:
+- **Today** — full pacing content as described above (Expanded) or its compact equivalent, whether or not anything's been spent today.
+- **Any past date** — pacing never applies (budget pacing is inherently "today"-relative), so the bar shows only that day's total plus the You/Partner split, no badge/bar/caption, in both Expanded and Compact layouts.
+
+**Scroll-anchoring fix:** resizing the bar exactly at the moment it pins (expanded → compact) fights with the browser's default scroll-anchoring — the anchor compensates for a resize on an element it's tracking near the top of the viewport by nudging scroll position, which itself changes the pinned state, producing an infinite snap-back loop right at the pin boundary. Fixed with a single `overflow-anchor: none` on `body` in `index.css`, scoped there rather than globally since nothing else in the app currently relies on scroll anchoring.
+
+No new colors or radii are introduced by this pattern — the blurred backdrop and bottom hairline reuse `TopNav`'s exact treatment, and the pacing badge reuses `--color-success`/`--color-danger`. The compact Segmented Progress Bar height (`h-1.5`) is the one new size value, added as an explicit `compact` variant on the shared component rather than a one-off override.
 
 ### Budget Reminder Card
 **Role:** Nudges someone who hasn't set a budget yet to go do so, on the Log screen — `LogPage.tsx`, inline JSX (not its own component file; a single simple card used in exactly one place, so extracting it would be premature abstraction — revisit if the Dashboard ever wants the same nudge)

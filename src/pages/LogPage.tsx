@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CaretRight, PiggyBank, Receipt, SpinnerGap } from '@phosphor-icons/react'
@@ -12,13 +12,13 @@ import { useBudgets } from '../hooks/useBudgets'
 import { useExpenseFilters } from '../contexts/ExpenseFiltersContext'
 import { useAppSound } from '../hooks/useAppSound'
 import { computeBudgetSummary } from '../lib/budgetSummary'
+import { toISODateLocal } from '../lib/dates'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { FilterDrawer } from '../components/FilterDrawer'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { UpcomingRecurring } from '../components/UpcomingRecurring'
-import { BudgetProgressBar } from '../components/BudgetProgressBar'
-import { AnimatedAmount } from '../components/AnimatedAmount'
+import { SummaryCard } from '../components/SummaryCard'
 import { formatCurrency, formatDateLabel } from '../lib/format'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import type { Expense } from '../types'
@@ -36,6 +36,12 @@ import {
 
 const TOAST_COPY = { added: 'Expense added', updated: 'Expense updated', deleted: 'Expense deleted' } as const
 
+// TopNav's actual rendered height (py-3.5 padding + icon-sm button, 28px +
+// 28px) — not the 64px AppShell assumes for its own <main> padding-top,
+// which only leaves an invisible extra gap there but would show scrolled
+// list content peeking through above this sticky bar if reused here.
+const NAV_HEIGHT = 56
+
 export function LogPage() {
   const navigate = useNavigate()
   const { user, space } = useAuth()
@@ -47,10 +53,20 @@ export function LogPage() {
   const playSound = useAppSound()
 
   const now = useMemo(() => new Date(), [])
+  const todayKey = useMemo(() => toISODateLocal(now), [now])
   const summary = useMemo(
     () => computeBudgetSummary({ expenses, budgets, members, userId: user?.id, now }),
     [expenses, budgets, members, user?.id, now],
   )
+
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const bottomSentinelRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const dateHeaderRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const [isPinned, setIsPinned] = useState(false)
+  const [cardHeight, setCardHeight] = useState(0)
+  const [safeTop, setSafeTop] = useState(0)
+  const [activeDate, setActiveDate] = useState(todayKey)
 
   const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy, setFilters, activeFilterCount } = useExpenseFilters()
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
@@ -100,6 +116,119 @@ export function LogPage() {
     }
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a))
   }, [filtered])
+
+  const dateKeys = useMemo(() => grouped.map(([date]) => date).join(','), [grouped])
+
+  // Reads --safe-top once (env(safe-area-inset-top), 0 on non-notched devices).
+  useEffect(() => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue('--safe-top')
+    const parsed = parseFloat(value)
+    if (!Number.isNaN(parsed)) setSafeTop(parsed)
+  }, [])
+
+  // Sentinel just above the sticky card: once it scrolls above the viewport
+  // top, the card has engaged position:sticky and is now pinned/compact.
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => setIsPinned(!entry.isIntersecting), {
+      rootMargin: '-1px 0px 0px 0px',
+      threshold: 0,
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Tracks the card's live rendered height (expanded vs. compact) so the
+  // date-header trigger band below can sit flush under it.
+  useLayoutEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    setCardHeight(el.getBoundingClientRect().height)
+    const observer = new ResizeObserver(([entry]) => setCardHeight(entry.contentRect.height))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // While resting at the top (not pinned), the card always shows "Today" —
+  // matching pre-scroll-aware behavior. Active-date tracking only takes
+  // over once the card has pinned, so nothing changes before the user
+  // actually starts scrolling.
+  useEffect(() => {
+    if (!isPinned) setActiveDate(todayKey)
+  }, [isPinned, todayKey])
+
+  // Watches every date-group header, plus a sentinel just past the end of
+  // the list, against a line just below the pinned card. Both are observed
+  // by the same instance so one callback resolves them together — with two
+  // separate observers, a single big scroll jump can fire both in either
+  // order and the header logic (below) can overwrite the bottom-of-list
+  // fallback right after it runs. On every crossing, recompute directly
+  // from live positions (rather than trusting which entry triggered the
+  // callback): if the bottom sentinel is on screen, the oldest group is
+  // forced active (it can be too short to ever push its own header past
+  // the line, since there's no more content below it to scroll through);
+  // otherwise pick the header that most recently scrolled past the line —
+  // robust against fast/flick scrolls that could otherwise jump clean over
+  // a thin trigger band.
+  useEffect(() => {
+    if (!isPinned) return
+    const headers = Array.from(dateHeaderRefs.current.entries())
+    const bottomEl = bottomSentinelRef.current
+    const lastDate = dateKeys.split(',').pop()
+    if (headers.length === 0 || !bottomEl || !lastDate) return
+    const topOffset = NAV_HEIGHT + safeTop + cardHeight
+    const observer = new IntersectionObserver(
+      () => {
+        if (bottomEl.getBoundingClientRect().top < window.innerHeight) {
+          setActiveDate(lastDate)
+          return
+        }
+        let candidateDate: string | null = null
+        let candidateTop = -Infinity
+        for (const [date, el] of headers) {
+          const top = el.getBoundingClientRect().top
+          if (top <= topOffset && top > candidateTop) {
+            candidateDate = date
+            candidateTop = top
+          }
+        }
+        if (candidateDate) setActiveDate(candidateDate)
+      },
+      { rootMargin: `-${topOffset}px 0px 0px 0px`, threshold: [0, 1] },
+    )
+    for (const [, el] of headers) observer.observe(el)
+    observer.observe(bottomEl)
+    return () => observer.disconnect()
+  }, [isPinned, dateKeys, cardHeight, safeTop])
+
+  const activeDateData = useMemo(() => {
+    if (activeDate === todayKey) {
+      return {
+        label: 'Today',
+        amount: summary.todaySpent,
+        pacing: summary.maxSpendToday !== null
+          ? { maxSpend: summary.maxSpendToday, usedPct: summary.todayUsedPct, overBudget: summary.todayOverBudget }
+          : null,
+        youAmount: summary.youTodaySpent,
+        partnerAmount: summary.partnerTodaySpent,
+      }
+    }
+    const items = grouped.find(([date]) => date === activeDate)?.[1] ?? []
+    let youAmount = 0
+    let partnerAmount = 0
+    for (const e of items) {
+      if (e.paid_by === user?.id) youAmount += e.amount
+      else partnerAmount += e.amount
+    }
+    return {
+      label: formatDateLabel(activeDate),
+      amount: items.reduce((s, e) => s + e.amount, 0),
+      pacing: null as { maxSpend: number; usedPct: number; overBudget: boolean } | null,
+      youAmount,
+      partnerAmount,
+    }
+  }, [activeDate, todayKey, summary, grouped, user?.id])
 
   function openAdd() { setEditingExpense(null); setSheetOpen(true); setOpenSwipeRowId(null) }
   function openEdit(e: Expense) { setEditingExpense(e); setSheetOpen(true) }
@@ -151,55 +280,23 @@ export function LogPage() {
   return (
     <>
       <div className="pb-24">
-        <div className="px-5 pt-2">
-          <Card
-            className="cursor-pointer p-5"
-            role="button"
+        <div ref={sentinelRef} className="h-px" aria-hidden />
+        <div
+          ref={cardRef}
+          className="sticky z-40"
+          style={{ top: `calc(${NAV_HEIGHT}px + var(--safe-top))` }}
+        >
+          <SummaryCard
+            compact={isPinned}
+            label={activeDateData.label}
+            amount={activeDateData.amount}
+            currencyCode={space?.currency_code}
+            pacing={activeDateData.pacing}
+            youAmount={activeDateData.youAmount}
+            partnerAmount={activeDateData.partnerAmount}
+            partnerName={summary.partner?.display_name}
             onClick={() => { playSound('click'); navigate('/dashboard') }}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">Today</p>
-                <p className="font-heading text-3xl font-medium text-foreground">
-                  <AnimatedAmount amount={summary.todaySpent} currencyCode={space?.currency_code} />
-                </p>
-              </div>
-              {summary.maxSpendToday !== null && (
-                <span
-                  className="mt-5 text-xs font-medium"
-                  style={{ color: summary.todayOverBudget ? 'var(--color-danger)' : 'var(--color-success)' }}
-                >
-                  {summary.todayOverBudget
-                    ? <>Over by <AnimatedAmount amount={Math.abs(summary.maxSpendToday - summary.todaySpent)} currencyCode={space?.currency_code} /></>
-                    : <><AnimatedAmount amount={summary.maxSpendToday - summary.todaySpent} currencyCode={space?.currency_code} /> left today</>}
-                </span>
-              )}
-            </div>
-
-            {summary.maxSpendToday !== null && (
-              <>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Max today: <AnimatedAmount amount={summary.maxSpendToday} currencyCode={space?.currency_code} />
-                </p>
-                <div className="mt-1.5">
-                  <BudgetProgressBar usedPct={summary.todayUsedPct} overBudget={summary.todayOverBudget} />
-                </div>
-              </>
-            )}
-
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">
-                You · <AnimatedAmount amount={summary.youTodaySpent} currencyCode={space?.currency_code} />
-              </span>
-              {summary.partner && (
-                <span className="font-medium text-muted-foreground">
-                  {summary.partner.display_name} · <AnimatedAmount amount={summary.partnerTodaySpent} currencyCode={space?.currency_code} />
-                </span>
-              )}
-            </div>
-
-            <p className="mt-2 text-xs font-medium text-muted-foreground">View all stats →</p>
-          </Card>
+          />
         </div>
 
         {!budgetsLoading && summary.youBudget === 0 && (
@@ -255,7 +352,14 @@ export function LogPage() {
             {grouped.map(([date, items]) => (
               <div key={date}>
                 {/* Date header */}
-                <div className="flex items-baseline justify-between px-5 pt-3 pb-1.5">
+                <div
+                  ref={el => {
+                    if (el) dateHeaderRefs.current.set(date, el)
+                    else dateHeaderRefs.current.delete(date)
+                  }}
+                  data-date={date}
+                  className="flex items-baseline justify-between px-5 pt-3 pb-1.5"
+                >
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     {formatDateLabel(date)}
                   </span>
@@ -295,6 +399,7 @@ export function LogPage() {
                 </div>
               </div>
             ))}
+            <div ref={bottomSentinelRef} className="h-px" aria-hidden />
           </div>
         )}
       </div>

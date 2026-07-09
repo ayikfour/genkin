@@ -68,6 +68,15 @@ html, body, #root {
   overscroll-behavior-y: contain;
 }
 
+body {
+  /* The Log screen's sticky summary card resizes (expanded → compact) right
+     as it crosses the scroll threshold that pins it. Chrome/Firefox's
+     default scroll-anchoring tries to compensate for that resize by
+     nudging scroll position, which fights with the resize itself and
+     produces an infinite snap-back loop right at the pin boundary. */
+  overflow-anchor: none;
+}
+
 /* Safe-area insets for notched phones */
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
