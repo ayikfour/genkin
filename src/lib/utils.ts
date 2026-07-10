@@ -15,3 +15,11 @@ export function isStandalonePwa() {
   const nav = navigator as Navigator & { standalone?: boolean }
   return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true
 }
+
+// True when the user has requested reduced motion at the OS/browser level.
+// Callers use this to skip decorative animation loops (e.g. AuthBackground)
+// entirely rather than just slowing them down.
+export function prefersReducedMotion() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}

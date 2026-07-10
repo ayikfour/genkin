@@ -15,7 +15,6 @@ import {
 
 type View =
   | { kind: 'signin' }
-  | { kind: 'signup-pending'; email: string }
   | { kind: 'forgot-request' }
   | { kind: 'forgot-verify'; email: string }
   | { kind: 'forgot-set-password' }
@@ -28,12 +27,16 @@ interface PasswordAuthFormProps {
   // session appears, skipping the set-password screen entirely — this lets
   // us tell it to hold off until the new password is actually saved.
   onSuppressRedirectChange: (suppress: boolean) => void
+  // Account creation only happens via the magic-link form now — this form
+  // is sign-in + recovery only, seeded with whatever email was already
+  // typed there.
+  initialEmail: string
+  onUseMagicLink: (email: string) => void
 }
 
-export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormProps) {
+export function PasswordAuthForm({ onSuppressRedirectChange, initialEmail, onUseMagicLink }: PasswordAuthFormProps) {
   const [view, setView] = useState<View>({ kind: 'signin' })
-  const [intent, setIntent] = useState<'signin' | 'signup'>('signin')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -65,47 +68,6 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
         setError('Incorrect email or password.')
       }
       setLoading(false)
-    }
-    // on success, AuthContext's session listener triggers AuthPage's redirect effect
-  }
-
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    resetFeedback()
-    const trimmedEmail = email.trim().toLowerCase()
-    const { data, error: err } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    })
-    if (err) {
-      setError(err.message || 'Failed to create account. Try again.')
-      setLoading(false)
-      return
-    }
-    if (data.user && data.user.identities?.length === 0) {
-      setError('An account already exists for this email — try signing in, or use "Forgot password" if you don’t remember it.')
-      setLoading(false)
-      return
-    }
-    setLoading(false)
-    setView({ kind: 'signup-pending', email: trimmedEmail })
-  }
-
-  async function handleVerifySignup(e: React.FormEvent) {
-    e.preventDefault()
-    if (view.kind !== 'signup-pending' || !code.trim()) return
-    setVerifying(true)
-    setVerifyError('')
-    const { error: err } = await supabase.auth.verifyOtp({
-      email: view.email,
-      token: code.trim(),
-      type: 'signup',
-    })
-    if (err) {
-      setVerifyError(err.message || 'Invalid or expired code. Check the digits and try again.')
-      setVerifying(false)
     }
     // on success, AuthContext's session listener triggers AuthPage's redirect effect
   }
@@ -165,23 +127,20 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
     onSuppressRedirectChange(false)
   }
 
-  if (view.kind === 'signup-pending' || view.kind === 'forgot-verify') {
-    const handleVerify = view.kind === 'signup-pending' ? handleVerifySignup : handleForgotVerify
-    const heading = view.kind === 'signup-pending' ? 'Confirm your email' : 'Check your email'
-    const purpose = view.kind === 'signup-pending' ? 'confirmation code' : 'recovery code'
+  if (view.kind === 'forgot-verify') {
     return (
       <div className="space-y-3 py-4 text-center">
         <EnvelopeSimple className="mx-auto size-8 text-muted-foreground" weight="light" />
-        <p className="text-base font-medium text-foreground">{heading}</p>
+        <p className="text-base font-medium text-foreground">Check your email</p>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          We sent a {purpose} to{' '}
+          We sent a recovery code to{' '}
           <span className="text-foreground">{view.email}</span>.
           {standalone
             ? ' Enter it below — the link in that email opens your browser, not this app, so it won’t sign you in here.'
             : ' Tap the link, or enter the code below.'}
         </p>
 
-        <form onSubmit={handleVerify} className="space-y-3 pt-2 text-left">
+        <form onSubmit={handleForgotVerify} className="space-y-3 pt-2 text-left">
           <div className="flex justify-center">
             <InputOTP
               maxLength={8}
@@ -211,7 +170,7 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
           )}
 
           <Button type="submit" disabled={verifying || code.length < 8} className="w-full">
-            {verifying ? 'Verifying…' : 'Verify code →'}
+            {verifying ? 'Verifying…' : 'Verify code'}
           </Button>
         </form>
 
@@ -250,7 +209,7 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
         )}
 
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? 'Sending…' : 'Send reset code →'}
+          {loading ? 'Sending…' : 'Send reset code'}
         </Button>
 
         <button
@@ -287,15 +246,15 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
         )}
 
         <Button type="submit" disabled={loading || newPassword.length < 6} className="w-full">
-          {loading ? 'Saving…' : 'Save password →'}
+          {loading ? 'Saving…' : 'Save password'}
         </Button>
       </form>
     )
   }
 
-  // view.kind === 'signin' — handles both sign-in and sign-up intents
+  // view.kind === 'signin'
   return (
-    <form onSubmit={intent === 'signin' ? handleSignIn : handleSignUp} className="space-y-3">
+    <form onSubmit={handleSignIn} className="space-y-3">
       <div className="space-y-1.5">
         <Label htmlFor="password-email">Email</Label>
         <Input
@@ -314,44 +273,35 @@ export function PasswordAuthForm({ onSuppressRedirectChange }: PasswordAuthFormP
         <Label htmlFor="password">Password</Label>
         <PasswordInput
           id="password"
-          autoComplete={intent === 'signin' ? 'current-password' : 'new-password'}
+          autoComplete="current-password"
           value={password}
           onChange={setPassword}
-          placeholder={intent === 'signup' ? 'At least 6 characters' : undefined}
           required
         />
       </div>
 
-      {intent === 'signin' && (
-        <button
-          type="button"
-          onClick={() => { resetFeedback(); setView({ kind: 'forgot-request' }) }}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          Forgot password?
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => { resetFeedback(); setView({ kind: 'forgot-request' }) }}
+        className="text-sm text-muted-foreground hover:text-foreground"
+      >
+        Forgot password?
+      </button>
 
       {error && (
         <p className="text-xs text-destructive">{error}</p>
       )}
 
-      <Button
-        type="submit"
-        disabled={loading || (intent === 'signup' && password.length < 6)}
-        className="w-full"
-      >
-        {loading
-          ? (intent === 'signin' ? 'Signing in…' : 'Creating account…')
-          : (intent === 'signin' ? 'Sign in →' : 'Create account →')}
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? 'Signing in…' : 'Sign in'}
       </Button>
 
       <button
         type="button"
-        onClick={() => { resetFeedback(); setIntent(i => i === 'signin' ? 'signup' : 'signin') }}
+        onClick={() => onUseMagicLink(email)}
         className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
       >
-        {intent === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in'}
+        Use email code instead
       </button>
     </form>
   )

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { NumericKeypad } from '@/components/NumericKeypad'
 import { OnboardingStepIndicator } from '@/components/OnboardingStepIndicator'
+import { AuthBackground } from '@/components/AuthBackground'
 
 type Step = 'name' | 'budget' | 'import' | 'invite'
 const STEPS: Step[] = ['name', 'budget', 'import', 'invite']
@@ -161,9 +162,10 @@ export function OnboardingPage() {
 
   return (
     <div
-      className="mx-auto flex min-h-screen max-w-lg flex-col p-6"
+      className="relative isolate mx-auto flex min-h-screen max-w-lg flex-col p-6"
       style={{ paddingTop: 'calc(24px + var(--safe-top))', paddingBottom: 'calc(24px + var(--safe-bottom))' }}
     >
+      <AuthBackground />
       <OnboardingStepIndicator currentStep={stepIndex} totalSteps={STEPS.length} />
 
       <div className="flex flex-1 flex-col pt-8">

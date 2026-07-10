@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { PasswordAuthForm } from '../components/PasswordAuthForm'
-import { EmailCodeAuthForm } from '../components/EmailCodeAuthForm'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MagicLinkAuthForm } from '../components/MagicLinkAuthForm'
+import { AuthBackground } from '../components/AuthBackground'
 
-type Mode = 'password' | 'code'
+type View = 'magic' | 'password'
 
 export function AuthPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<Mode>('password')
+  const [view, setView] = useState<View>('magic')
+  const [email, setEmail] = useState('')
   const [suppressRedirect, setSuppressRedirect] = useState(false)
 
   useEffect(() => {
@@ -18,7 +19,9 @@ export function AuthPage() {
   }, [session, navigate, suppressRedirect])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+    <div className="relative isolate flex min-h-screen flex-col items-center justify-end p-6 pb-10">
+      <AuthBackground />
+
       <div className="w-full max-w-sm space-y-6">
 
         {/* Wordmark */}
@@ -33,20 +36,17 @@ export function AuthPage() {
 
         {/* Card */}
         <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-          <Tabs
-            value={mode}
-            onValueChange={v => setMode(v as Mode)}
-          >
-            <TabsList className="w-full">
-              <TabsTrigger value="password">Password</TabsTrigger>
-              <TabsTrigger value="code">Email code</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {mode === 'password' ? (
-            <PasswordAuthForm onSuppressRedirectChange={setSuppressRedirect} />
+          {view === 'magic' ? (
+            <MagicLinkAuthForm
+              initialEmail={email}
+              onUsePassword={emailTyped => { setEmail(emailTyped); setView('password') }}
+            />
           ) : (
-            <EmailCodeAuthForm />
+            <PasswordAuthForm
+              initialEmail={email}
+              onUseMagicLink={emailTyped => { setEmail(emailTyped); setView('magic') }}
+              onSuppressRedirectChange={setSuppressRedirect}
+            />
           )}
         </div>
       </div>

@@ -613,11 +613,6 @@ Full-width, height 48px, radius 9999px, background #ffffff, text #000000, DM San
 
 Full-width, height 48px, radius 9999px, glass treatment (background #1d1d1d 80%, backdrop blur 20px, 1px #e5e5e5 at 10% border). Text #e5e5e5, DM Sans 16px weight 500.
 
-### Mode Switcher (Segmented Pill)
-**Role:** Toggle between two mutually exclusive modes (Password/Email code on the Auth screen)
-
-Pill container, radius 9999px, background #1d1d1d, padding 4px. Two equal segments; active segment: background #3d3d3d, radius 9999px, text #e5e5e5 weight 500. Inactive: text #686868 weight 400. DM Sans 15px.
-
 ### Mobile Top Nav (App Shell)
 **Role:** Primary navigation chrome across all first-level screens (Logs, Stats, Activity, Settings) plus the one remaining sub-page (Import expenses)
 
@@ -729,18 +724,34 @@ this is a touch-first mobile PWA, so hover has no meaningful state
 on-device.
 
 ### OTP Code Input
-**Role:** Code-entry step wherever email ownership needs verifying — the Email code tab's sign-in (fallback to tapping the magic link), password sign-up confirmation, and password recovery, on the Auth screen
+**Role:** Code-entry step wherever email ownership needs verifying — the magic-link form's sign-in/sign-up (fallback to tapping the magic link itself) and the password form's recovery flow, on the Auth screen
 
-Built on shadcn's `InputOTP`, two groups of 4 boxes separated by a divider (`InputOTPSeparator`). **8 digits, not 6** — this project's `genkin-dev` Supabase instance issues 8-digit email OTPs for the Magic Link template (re-check the prod project if this ever changes, and re-check the Confirm Signup/Reset Password templates too if their digit count ever diverges from the Magic Link one). In the Email code tab, sits below the "Check your email" copy as a secondary path, separated by a hairline divider with "or enter the code" label. Verify action reuses the primary `Button`.
+Built on shadcn's `InputOTP`, two groups of 4 boxes separated by a divider (`InputOTPSeparator`). **8 digits, not 6** — this project's `genkin-dev` Supabase instance issues 8-digit email OTPs for the Magic Link template (re-check the prod project if this ever changes, and re-check the Reset Password template too if its digit count ever diverges from the Magic Link one). On the magic-link form, sits below the "Check your email" copy as a secondary path, separated by a hairline divider with "or enter the code" label. Verify action reuses the primary `Button`.
 
-Tapping the emailed magic link always opens the OS default browser, never an installed PWA — and on iOS the installed PWA's storage is sandboxed separately from Safari, so a sign-in completed in the browser tab can't hand off a session to the home-screen app anyway. [EmailCodeAuthForm.tsx](src/components/EmailCodeAuthForm.tsx) and [PasswordAuthForm.tsx](src/components/PasswordAuthForm.tsx) both detect standalone display mode (`isStandalonePwa()` in [utils.ts](src/lib/utils.ts)) and swap the "check your email" copy to lead with the code (and drop the "or") when running installed, since the code path is the only one that reliably works there. The manifest also sets `capture_links: 'existing-client-navigate'`, which lets Chromium/Android PWAs capture the link back into the existing app window — no iOS equivalent exists, so the code path stays the primary fix.
+Tapping the emailed magic link always opens the OS default browser, never an installed PWA — and on iOS the installed PWA's storage is sandboxed separately from Safari, so a sign-in completed in the browser tab can't hand off a session to the home-screen app anyway. [MagicLinkAuthForm.tsx](src/components/MagicLinkAuthForm.tsx) and [PasswordAuthForm.tsx](src/components/PasswordAuthForm.tsx) both detect standalone display mode (`isStandalonePwa()` in [utils.ts](src/lib/utils.ts)) and swap the "check your email" copy to lead with the code (and drop the "or") when running installed, since the code path is the only one that reliably works there. The manifest also sets `capture_links: 'existing-client-navigate'`, which lets Chromium/Android PWAs capture the link back into the existing app window — no iOS equivalent exists, so the code path stays the primary fix.
 
 For local testing where the magic link can't reach the environment (e.g. a preview pane with its own browser context, separate from your inbox), `scripts/dev-otp.mjs` generates a real OTP via the Supabase admin API for any of the three flows (`magiclink`/`signup`/`recovery`) — no email round-trip needed. See the script's header comment for usage.
 
 ### Password Input
-**Role:** Password entry on the Auth screen's Password tab (sign-in, sign-up, recovery) and Settings' Change Password action
+**Role:** Password entry on the Auth screen's password form (sign-in, recovery) and Settings' Change Password action
 
 Wraps the standard Form Field/Input pattern above (same 48px height, `#1d1d1d` background, 10px radius — no new tokens) with a visibility toggle: a ghost icon `Button` (`size="icon-sm"`, 28px, the compact size reserved for secondary chrome) absolutely positioned inside the input's trailing edge, swapping Phosphor `Eye`/`EyeSlash` to switch the field between `type="password"` and `type="text"`.
+
+### Auth Screen — magic link as primary flow (`AuthPage.tsx`)
+**Role:** Sign-in/sign-up entry point (`/auth`)
+
+Magic link + OTP ([MagicLinkAuthForm.tsx](src/components/MagicLinkAuthForm.tsx)) is the sole default flow — there's no Password/Email code tab switcher anymore (the old **Mode Switcher (Segmented Pill)** pattern is retired along with it). `signInWithOtp`'s default `shouldCreateUser: true` means this one form already covers both sign-up and sign-in, so there's no separate "Create account" step. Password sign-in ([PasswordAuthForm.tsx](src/components/PasswordAuthForm.tsx)) is now an opt-in secondary path, trimmed to sign-in + recovery only (no account creation there either) and reached only from a "Use password" text link below the magic-link form's Verify code button; its own signin view carries a symmetric "Use email code instead" link back to the magic-link form. Both links carry the typed email across the switch (`AuthPage` lifts a single `email` string between the two forms). No button label in either form uses a trailing arrow glyph — plain text only ("Send magic link", "Verify code", "Sign in", etc.).
+
+The page's content column anchors to the bottom of the viewport
+(`items-center justify-end` instead of `justify-center`) rather than
+vertical-centering, so the animated background below has room to read as a
+full poster above the form. See **Auth Background** next for what fills
+that space.
+
+### Auth Background
+**Role:** Full-viewport animated backdrop behind the Auth screen and Onboarding walkthrough — first-impression surface for a brand-new visitor
+
+A generative dither/ASCII field (`AuthBackground.tsx`), rendered on a `fixed inset-0 -z-10` `<canvas>` behind the page content — the wrapping page container needs `isolate` (`isolation: isolate`) alongside `relative`, since without a local stacking context a negative-z-index fixed descendant paints *behind* `<body>`'s own `background-color` instead of in front of it (a classic CSS stacking gotcha, not specific to canvas). Pure Canvas2D, no shader/WebGL and no new npm dependency: a hand-rolled value-noise field (bilinear-interpolated lattice hash, 3-octave fbm — no external noise library) drives a grid of 16px cells. Raw noise is pushed through a threshold + power curve so most of the field stays fully void (real negative space/gaps, matching the reference images' map-like clusters) and only organic high-value regions reveal the texture — each visible cell renders as either a halftone dot (dither, radius scaled by the noise value) or a monospace glyph from a density ramp (`.:-=+*#%@`, roughly 1 in 5 cells) for the ASCII half of the effect. Colors are the existing neutral ramp only — `--color-fog` → `--color-mist` → `--color-bone` as the noise value rises. `--color-indigo` appears as a sparse accent, but picked by its own slow-changing hash (re-rolled every ~6s) rather than the brightness threshold — noise peaks high enough to clear a brightness threshold are too rare to reliably surface the accent at all, so accent placement and brightness are deliberately decoupled; either way it stays a handful of cells, matching the "indigo is atmospheric only, never a solid fill" rule elsewhere in this doc. The noise field's time axis drifts slowly via `requestAnimationFrame` (capped ~30fps, since a full-grid redraw every tick is unnecessary cost), pausing entirely on `document.visibilitychange` (backgrounded tab) and rendering a single static frame with no rAF loop at all when `prefers-reduced-motion: reduce` is set (`prefersReducedMotion()` in `utils.ts`). Mounted on both `AuthPage.tsx` and `OnboardingPage.tsx` — the two are already documented as sharing "full-bleed, no AppShell" treatment, so they share this background too; `OnboardingPage.tsx` keeps its own existing centered wizard layout, only the background layer is added behind it.
 
 ### Dashboard Sections (Stats screen)
 **Role:** Container pattern shared by every section on `/dashboard` — This Month + Budget, Avg. Daily Spend chart, Category breakdown, Who paid
@@ -1011,7 +1022,7 @@ them:
 | Bottom Sheet (add/edit expense), Filter Drawer, Month Drawer | `Sheet` (`side="bottom"`) |
 | Category Picker, Filter Drawer, Month Drawer row lists | app-owned bordered/divided `<button>` rows, no shadcn equivalent — chips were tried and dropped for all three (worse scanning across many options; see **Avoid rounded chips**) |
 | Delete confirmation (expense row) | `Dialog` |
-| Mode Switcher (Password/Email code) | `Tabs`, styled as a segmented control |
+| Auth Background | app-owned `AuthBackground.tsx`, no shadcn equivalent (plain Canvas2D, no shader/WebGL library) |
 | Toast/Snackbar | `Sonner` (`<Toaster />` mounted once at the app root) |
 | Chart Card (Dashboard) | `Card` wrapping the existing Recharts charts |
 | Segmented Progress Bar (budget usage) | app-owned `BudgetProgressBar.tsx`, no shadcn equivalent (plain flex row of divs, not the shadcn `Progress` primitive, to match the blocky reference style rather than a continuous fill) |

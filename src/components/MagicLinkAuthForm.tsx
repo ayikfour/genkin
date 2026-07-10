@@ -15,8 +15,13 @@ import {
 
 type State = 'idle' | 'loading' | 'sent' | 'error'
 
-export function EmailCodeAuthForm() {
-  const [email, setEmail] = useState('')
+interface MagicLinkAuthFormProps {
+  initialEmail: string
+  onUsePassword: (email: string) => void
+}
+
+export function MagicLinkAuthForm({ initialEmail, onUsePassword }: MagicLinkAuthFormProps) {
+  const [email, setEmail] = useState(initialEmail)
   const [state, setState] = useState<State>('idle')
   const [error, setError] = useState('')
   const [code, setCode] = useState('')
@@ -119,9 +124,16 @@ export function EmailCodeAuthForm() {
           )}
 
           <Button type="submit" disabled={verifying || code.length < 8} className="w-full">
-            {verifying ? 'Verifying…' : 'Verify code →'}
+            {verifying ? 'Verifying…' : 'Verify code'}
           </Button>
         </form>
+
+        <button
+          onClick={() => onUsePassword(email)}
+          className="mt-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Use password
+        </button>
       </div>
     )
   }
@@ -147,7 +159,7 @@ export function EmailCodeAuthForm() {
       )}
 
       <Button type="submit" disabled={state === 'loading'} className="w-full">
-        {state === 'loading' ? 'Sending…' : 'Send magic link →'}
+        {state === 'loading' ? 'Sending…' : 'Send magic link'}
       </Button>
     </form>
   )
