@@ -630,13 +630,7 @@ patch has loaded. Seventeen of the preset's 26 sounds are wired, grouped by
 what they signal:
 
 - **Entry & outcomes** — `key-press` on every Amount Keypad digit/backspace
-  tap (`NumericKeypad.tsx`), each digit 0-9 detuned via
-  `PlayOptions.detune` on the shared sound to its own pitch — ten
-  semitone steps spanning just under an octave, all below the base tone
-  (-500 to -1400 cents) so the pad reads lower overall, shuffled across
-  the keys (not assigned in scale order) so sequential digits don't
-  produce a predictable ascending/descending run — while backspace keeps
-  the plain undetuned tone; `success` after an expense is added/updated
+  tap (`NumericKeypad.tsx`); `success` after an expense is added/updated
   (`LogPage.tsx`/`DashboardPage.tsx`'s `handleSaved`); `error` on inline
   validation/Supabase failures in the Add Expense save flow
   (`AddExpenseSheet.tsx`'s `handleSave`); `delete` on any confirmed expense
