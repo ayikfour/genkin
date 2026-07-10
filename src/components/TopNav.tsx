@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 const NAV_CONFIG: Record<string, { title: string; back?: string; hideGear?: boolean }> = {
   '/log': { title: 'Logs' },
   '/dashboard': { title: 'Stats', back: '/log' },
+  '/feed': { title: 'Feed', back: '/log' },
   '/settings': { title: 'Settings', back: '/log', hideGear: true },
   '/import': { title: 'Import expenses', back: '/settings', hideGear: true },
 }

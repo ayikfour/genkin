@@ -8,6 +8,7 @@ import { TopNav } from './components/TopNav'
 import { AuthPage } from './pages/AuthPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { LogPage } from './pages/LogPage'
+import { FeedPage } from './pages/FeedPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ImportPage } from './pages/ImportPage'
@@ -46,6 +47,10 @@ export default function App() {
               <Route
                 path="/dashboard"
                 element={<ProtectedRoute><AppShell><DashboardPage /></AppShell></ProtectedRoute>}
+              />
+              <Route
+                path="/feed"
+                element={<ProtectedRoute><AppShell><FeedPage /></AppShell></ProtectedRoute>}
               />
               <Route
                 path="/settings"

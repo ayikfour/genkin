@@ -36,6 +36,28 @@ export interface Category {
 export interface SpaceMember {
   user_id: string
   display_name: string
+  feed_last_seen_at: string | null
+}
+
+export type ExpenseActivityAction = 'created' | 'updated' | 'deleted'
+
+export interface ExpenseActivitySnapshot {
+  amount: number
+  category: string
+  description: string
+  expense_date: string
+  paid_by: string | null
+  recurring_expense_id: string | null
+}
+
+export interface ExpenseActivity {
+  id: string
+  expense_id: string
+  actor_id: string
+  action: ExpenseActivityAction
+  old_data: ExpenseActivitySnapshot | null
+  new_data: ExpenseActivitySnapshot | null
+  created_at: string
 }
 
 export interface Budget {

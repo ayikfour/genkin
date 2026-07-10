@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CaretRight, PiggyBank, Receipt, SpinnerGap } from '@phosphor-icons/react'
+import { CaretRight, ClockCounterClockwise, PiggyBank, Receipt, SpinnerGap } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useExpenses } from '../hooks/useExpenses'
+import { useExpenseActivity } from '../hooks/useExpenseActivity'
 import { useCategories } from '../hooks/useCategories'
 import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
@@ -46,6 +47,7 @@ export function LogPage() {
   const navigate = useNavigate()
   const { user, space } = useAuth()
   const { expenses, loading, refetch } = useExpenses(space?.space_id)
+  const { activity: recentActivity } = useExpenseActivity(space?.space_id)
   const categories = useCategories()
   const members = useSpaceMembers(space?.space_id)
   const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(space?.space_id)
@@ -57,6 +59,12 @@ export function LogPage() {
   const summary = useMemo(
     () => computeBudgetSummary({ expenses, budgets, members, userId: user?.id, now }),
     [expenses, budgets, members, user?.id, now],
+  )
+
+  const myFeedLastSeenAt = members.find(m => m.user_id === user?.id)?.feed_last_seen_at ?? null
+  const hasUnreadActivity = useMemo(
+    () => recentActivity.some(a => a.actor_id !== user?.id && (!myFeedLastSeenAt || a.created_at > myFeedLastSeenAt)),
+    [recentActivity, user?.id, myFeedLastSeenAt],
   )
 
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -312,6 +320,23 @@ export function LogPage() {
                 <p className="text-xs text-muted-foreground">
                   Track spending against a monthly goal.
                 </p>
+              </div>
+              <CaretRight className="size-3.5 shrink-0 text-muted-foreground" />
+            </Card>
+          </div>
+        )}
+
+        {hasUnreadActivity && (
+          <div className="px-5 pt-3">
+            <Card
+              className="flex flex-row cursor-pointer items-center gap-3 p-5"
+              role="button"
+              onClick={() => { playSound('click'); navigate('/feed') }}
+            >
+              <ClockCounterClockwise className="size-8 shrink-0 text-muted-foreground" weight="light" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">New activity in your space</p>
+                <p className="text-xs text-muted-foreground">See what's changed recently.</p>
               </div>
               <CaretRight className="size-3.5 shrink-0 text-muted-foreground" />
             </Card>

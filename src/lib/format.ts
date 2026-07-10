@@ -16,3 +16,9 @@ export function formatDateLabel(dateStr: string): string {
   if (dateStr === yesterday) return 'Yesterday'
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
+
+// Feed rows are grouped under a day header (see FeedPage), so a row only
+// needs to show the time-of-day the action happened, not repeat the date.
+export function formatActivityTime(createdAtIso: string): string {
+  return new Date(createdAtIso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
