@@ -27,7 +27,7 @@ export function AuthBackground() {
         colorFront={BONE}
         shape="warp"
         type="4x4"
-        size={5}
+        size={1.5}
         scale={1.8}
         speed={reduced ? 0 : 0.3}
       />
