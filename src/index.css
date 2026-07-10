@@ -130,6 +130,14 @@ body {
   font-weight: 500;
 }
 
+/* Rare indigo accent glow behind the Auth/Onboarding shader background —
+   see design.md's "Auth Background" pattern. Slow opacity pulse keeps the
+   indigo atmospheric rather than a static wash. */
+@keyframes indigo-glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
