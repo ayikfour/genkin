@@ -30,7 +30,7 @@ export function TopNavMonthFilter() {
   const hasActiveFilters = activeFilterCount > 0
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       {availableMonths.length > 0 && selectedMonth && (
         <MonthDrawer
           months={availableMonths}
@@ -39,6 +39,8 @@ export function TopNavMonthFilter() {
           triggerClassName={MONTH_TRIGGER_CLASSNAME}
         />
       )}
+
+      <span className="h-4 w-px bg-border" aria-hidden />
 
       <Button
         variant="ghost"

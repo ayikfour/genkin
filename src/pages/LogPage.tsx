@@ -42,6 +42,10 @@ const TOAST_COPY = { added: 'Expense added', updated: 'Expense updated', deleted
 // list content peeking through above this sticky bar if reused here.
 const NAV_HEIGHT = 56
 
+// Max categories spelled out in the active-filter bar before collapsing the
+// rest into "+N more" — matches the count used in its design spec example.
+const MAX_CATEGORIES_SHOWN = 3
+
 export function LogPage() {
   const navigate = useNavigate()
   const { user, space } = useAuth()
@@ -288,15 +292,44 @@ export function LogPage() {
   const catIcons = Object.fromEntries(categories.map(c => [c.name, c.icon]))
   const hasActiveFilters = activeFilterCount > 0
 
+  const filterSummaryText = (() => {
+    if (!hasActiveFilters) return null
+    const segments: string[] = []
+    if (filterCategories.length > 0) {
+      const shown = filterCategories.slice(0, MAX_CATEGORIES_SHOWN)
+      const shownText = shown.map(name => `${catIcons[name] ?? '📦'} ${name}`).join(', ')
+      const remaining = filterCategories.length - shown.length
+      segments.push(remaining > 0 ? `${shownText}, +${remaining} more` : shownText)
+    }
+    if (filterPaidBy) {
+      const payerLabel = filterPaidBy === user?.id
+        ? 'you'
+        : (members.find(m => m.user_id === filterPaidBy)?.display_name ?? 'partner')
+      segments.push(`paid by ${payerLabel}`)
+    }
+    return `Viewing only ${segments.join(' · ')}`
+  })()
+
   return (
     <>
       <div className="pb-24">
         <div ref={sentinelRef} className="h-px" aria-hidden />
         <div
           ref={cardRef}
-          className="sticky z-40"
+          // -mt-2 cancels AppShell's stale 64px top padding (real NAV_HEIGHT
+          // is 56px — see NAV_HEIGHT comment above) so this block's resting
+          // position sits flush under the nav with no seam, matching its own
+          // `top` offset once scrolled.
+          className="sticky z-40 -mt-2"
           style={{ top: `calc(${NAV_HEIGHT}px + var(--safe-top))` }}
         >
+          {filterSummaryText && (
+            <div className="border-b border-border bg-background/80 px-5 py-2 backdrop-blur-md">
+              <p className="truncate text-xs font-medium text-muted-foreground">
+                {filterSummaryText}
+              </p>
+            </div>
+          )}
           <SummaryCard
             compact={isPinned}
             label={activeDateData.label}
