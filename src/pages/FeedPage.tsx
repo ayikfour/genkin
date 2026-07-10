@@ -10,6 +10,7 @@ import { PageSwitcherBar } from '../components/PageSwitcherBar'
 import { formatDateLabel } from '../lib/format'
 import { toISODateLocal } from '../lib/dates'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
+import type { AvatarSubject } from '../lib/avatar'
 import type { ExpenseActivity } from '../types'
 
 export function FeedPage() {
@@ -31,6 +32,18 @@ export function FeedPage() {
   function actorName(actorId: string) {
     if (actorId === user?.id) return 'You'
     return members.find(m => m.user_id === actorId)?.display_name ?? 'Partner'
+  }
+
+  function resolveActor(actorId: string): AvatarSubject {
+    if (actorId === user?.id) {
+      return { user_id: actorId, display_name: 'You', avatar_url: space?.avatar_url ?? null }
+    }
+    const member = members.find(m => m.user_id === actorId)
+    return {
+      user_id: actorId,
+      display_name: member?.display_name ?? 'Partner',
+      avatar_url: member?.avatar_url ?? null,
+    }
   }
 
   function getCategoryIcon(category: string) {
@@ -91,6 +104,7 @@ export function FeedPage() {
               <FeedRow
                 key={a.id}
                 activity={a}
+                actor={resolveActor(a.actor_id)}
                 actorName={actorName(a.actor_id)}
                 currencyCode={currencyCode}
                 getCategoryIcon={getCategoryIcon}

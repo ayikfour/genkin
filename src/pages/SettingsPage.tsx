@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
@@ -13,6 +13,7 @@ import { getCurrency, DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { formatCurrency } from '../lib/format'
 import { effectiveBudgetFor } from '../lib/budgetSummary'
 import { toISODateLocal } from '../lib/dates'
+import { MemberAvatar, uploadAvatar, removeAvatar } from '../lib/avatar'
 import { CurrencyDrawer } from '../components/CurrencyDrawer'
 import { PasswordSheet } from '../components/PasswordSheet'
 import { ChangeUsernameSheet } from '../components/ChangeUsernameSheet'
@@ -29,7 +30,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { Check, CaretRight, Copy } from '@phosphor-icons/react'
+import { Check, CaretRight, Copy, SpinnerGap } from '@phosphor-icons/react'
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -48,6 +49,9 @@ export function SettingsPage() {
   const [switchSpaceSheetOpen, setSwitchSpaceSheetOpen] = useState(false)
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const currencyCode = space?.currency_code ?? DEFAULT_CURRENCY_CODE
   const currentMonth = toISODateLocal(new Date()).slice(0, 7)
@@ -86,6 +90,39 @@ export function SettingsPage() {
     await refreshSpace()
   }
 
+  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file later
+    if (!file || !user) return
+    setAvatarError('')
+    setUploadingAvatar(true)
+    try {
+      await uploadAvatar(file, user.id)
+      await refreshSpace()
+      playSound('click')
+    } catch {
+      setAvatarError('Could not upload photo')
+      playSound('warning')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user) return
+    setAvatarError('')
+    setUploadingAvatar(true)
+    try {
+      await removeAvatar(user.id)
+      await refreshSpace()
+    } catch {
+      setAvatarError('Could not remove photo')
+      playSound('warning')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   async function handleLeave() {
     setLeaving(true)
     const { error } = await supabase.rpc('leave_space')
@@ -111,6 +148,47 @@ export function SettingsPage() {
             </p>
           )}
         </div>
+
+        {/* Profile photo */}
+        {space && user && (
+          <div className="flex items-center justify-between border-b border-border px-4 py-3.5 last:border-b-0">
+            <span className="text-base text-foreground">Profile photo</span>
+            <div className="flex items-center gap-3">
+              {avatarError && <span className="text-xs text-destructive">{avatarError}</span>}
+              {space.avatar_url && !uploadingAvatar && (
+                <button
+                  onClick={handleRemoveAvatar}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Remove
+                </button>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="relative disabled:opacity-60"
+                aria-label="Change profile photo"
+              >
+                <MemberAvatar
+                  member={{ user_id: user.id, display_name: space.display_name, avatar_url: space.avatar_url }}
+                  size="lg"
+                />
+                {uploadingAvatar && (
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60">
+                    <SpinnerGap className="size-4 animate-spin text-foreground" weight="bold" />
+                  </span>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarFileChange}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Your name */}
         {space && (

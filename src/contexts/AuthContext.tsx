@@ -7,6 +7,7 @@ import { materializeDueRecurringExpenses } from '../lib/recurringExpenses'
 interface SpaceInfo {
   space_id: string
   display_name: string
+  avatar_url: string | null
   currency_code: string
 }
 
@@ -42,13 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function fetchSpace(userId: string) {
     const { data } = await supabase
       .from('space_members')
-      .select('space_id, display_name, spaces(currency_code)')
+      .select('space_id, display_name, avatar_url, spaces(currency_code)')
       .eq('user_id', userId)
       .maybeSingle()
     if (!data) { setSpace(null); return }
     const spaces = data.spaces as { currency_code: string } | { currency_code: string }[] | null
     const currency_code = (Array.isArray(spaces) ? spaces[0]?.currency_code : spaces?.currency_code) ?? DEFAULT_CURRENCY_CODE
-    setSpace({ space_id: data.space_id, display_name: data.display_name, currency_code })
+    setSpace({ space_id: data.space_id, display_name: data.display_name, avatar_url: data.avatar_url, currency_code })
   }
 
   // Every user always belongs to exactly one space — a brand-new user

@@ -36,6 +36,7 @@ export interface Category {
 export interface SpaceMember {
   user_id: string
   display_name: string
+  avatar_url: string | null
   feed_last_seen_at: string | null
 }
 

@@ -12,7 +12,7 @@ export function useSpaceMembers(spaceId: string | undefined) {
     if (!spaceId) return
     supabase
       .from('space_members')
-      .select('user_id, display_name, feed_last_seen_at')
+      .select('user_id, display_name, avatar_url, feed_last_seen_at')
       .eq('space_id', spaceId)
       .then(({ data }) => {
         const fetched = data ?? []

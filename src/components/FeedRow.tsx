@@ -1,9 +1,11 @@
 import { buildFeedMessage } from '../lib/feedMessages'
 import { formatActivityTime } from '../lib/format'
+import { MemberAvatar, type AvatarSubject } from '../lib/avatar'
 import type { ExpenseActivity } from '../types'
 
 interface Props {
   activity: ExpenseActivity
+  actor: AvatarSubject
   actorName: string
   currencyCode: string
   getCategoryIcon: (category: string) => string
@@ -16,7 +18,7 @@ const VARIANT_STYLE: Record<string, string> = {
   'verb-danger': 'var(--color-danger)',
 }
 
-export function FeedRow({ activity, actorName, currencyCode, getCategoryIcon, isFirst, isLast }: Props) {
+export function FeedRow({ activity, actor, actorName, currencyCode, getCategoryIcon, isFirst, isLast }: Props) {
   const segments = buildFeedMessage(activity, actorName, currencyCode, getCategoryIcon)
   const time = formatActivityTime(activity.created_at)
 
@@ -29,8 +31,9 @@ export function FeedRow({ activity, actorName, currencyCode, getCategoryIcon, is
       <div className="relative w-9 shrink-0">
         {!isFirst && <span className="absolute top-0 left-1/2 h-1/2 w-px -translate-x-1/2 bg-border" />}
         {!isLast && <span className="absolute bottom-0 left-1/2 h-1/2 w-px -translate-x-1/2 bg-border" />}
-        {/* Placeholder for a future actor avatar — plain for now. */}
-        <div className="absolute top-1/2 left-1/2 z-10 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted" />
+        <div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+          <MemberAvatar member={actor} size="default" />
+        </div>
       </div>
 
       <div className="min-w-0 flex-1 py-3.5">
