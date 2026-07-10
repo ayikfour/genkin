@@ -66,10 +66,16 @@ export function AuthBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const canvasEl = canvasRef.current
+    if (!canvasEl) return
+    const ctx2d = canvasEl.getContext('2d')
+    if (!ctx2d) return
+    // Re-bound to explicitly non-nullable types: narrowing from the guards
+    // above doesn't persist into the nested functions below (a well-known
+    // TS limitation across closures), so `canvas`/`ctx` need a type that
+    // excludes null from the start rather than relying on that narrowing.
+    const canvas: HTMLCanvasElement = canvasEl
+    const ctx: CanvasRenderingContext2D = ctx2d
 
     const reduced = prefersReducedMotion()
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
