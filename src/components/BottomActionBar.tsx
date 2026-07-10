@@ -1,5 +1,7 @@
-import { Plus, X, CaretDown } from '@phosphor-icons/react'
-import { MonthDrawer } from './MonthDrawer'
+import { useState } from 'react'
+import { Plus, X } from '@phosphor-icons/react'
+import { PageSwitcher } from './PageSwitcher'
+import { cn } from '@/lib/utils'
 import { useAppSound } from '@/hooks/useAppSound'
 import { Button } from '@/components/ui/button'
 
@@ -12,14 +14,8 @@ const TOOLBAR_SOLID_HOVER = 'hover:bg-primary hover:brightness-90'
 interface BottomActionBarProps {
   mode: 'logs' | 'stats'
   onAdd: () => void
-  activeFilterCount: number
-  onOpenFilter: () => void
-  availableMonths: string[]
-  selectedMonth: string | null
-  onSelectMonth: (month: string) => void
   // logs-only
   editMode?: boolean
-  onEnterEditMode?: () => void
   onExitEditMode?: () => void
   selectedCount?: number
   onRequestBulkDelete?: () => void
@@ -28,24 +24,25 @@ interface BottomActionBarProps {
 export function BottomActionBar({
   mode,
   onAdd,
-  activeFilterCount,
-  onOpenFilter,
-  availableMonths,
-  selectedMonth,
-  onSelectMonth,
   editMode = false,
-  onEnterEditMode,
   onExitEditMode,
   selectedCount = 0,
   onRequestBulkDelete,
 }: BottomActionBarProps) {
   const playSound = useAppSound()
-  const hasActiveFilters = activeFilterCount > 0
   const inEditMode = mode === 'logs' && editMode
+  const [switcherOpen, setSwitcherOpen] = useState(false)
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between px-5 pt-3"
+      className={cn(
+        'fixed inset-x-0 bottom-0 flex items-center justify-between px-5 pt-3',
+        // The Page Switcher's blur overlay sits at z-[55] so it can cover
+        // the Top Nav too — this toolbar only needs to outrank that while
+        // the switcher is actually open. Staying elevated permanently would
+        // put it above z-50 surfaces like Sheet/Dialog at all other times.
+        switcherOpen ? 'z-[56]' : 'z-30',
+      )}
       style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
     >
       {inEditMode ? (
@@ -78,26 +75,7 @@ export function BottomActionBar({
           {selectedCount > 0 ? `Delete (${selectedCount})` : 'Delete'}
         </Button>
       ) : (
-        <div className="flex items-center gap-2">
-          {mode === 'logs' && (
-            <Button onClick={onEnterEditMode} className={TOOLBAR_SOLID_HOVER}>Edit</Button>
-          )}
-          <Button
-            onClick={() => { playSound('tap'); onOpenFilter() }}
-            className={`gap-1.5 ${TOOLBAR_SOLID_HOVER}`}
-          >
-            {hasActiveFilters ? `${activeFilterCount} · Filter` : 'Filter'}
-            <CaretDown className="size-3.5" />
-          </Button>
-          {availableMonths.length > 0 && selectedMonth && (
-            <MonthDrawer
-              months={availableMonths}
-              selectedMonth={selectedMonth}
-              onSelect={onSelectMonth}
-              triggerClassName={TOOLBAR_SOLID_HOVER}
-            />
-          )}
-        </div>
+        <PageSwitcher triggerClassName={TOOLBAR_SOLID_HOVER} onOpenChange={setSwitcherOpen} />
       )}
     </div>
   )

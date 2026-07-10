@@ -6,6 +6,7 @@ import { useExpenseActivity } from '../hooks/useExpenseActivity'
 import { useSpaceMembers } from '../hooks/useSpaceMembers'
 import { useCategories } from '../hooks/useCategories'
 import { FeedRow } from '../components/FeedRow'
+import { PageSwitcherBar } from '../components/PageSwitcherBar'
 import { formatDateLabel } from '../lib/format'
 import { toISODateLocal } from '../lib/dates'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
@@ -52,46 +53,55 @@ export function FeedPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center pt-16">
-        <SpinnerGap className="size-6 animate-spin text-muted-foreground" weight="bold" />
-      </div>
+      <>
+        <div className="flex justify-center pt-16">
+          <SpinnerGap className="size-6 animate-spin text-muted-foreground" weight="bold" />
+        </div>
+        <PageSwitcherBar />
+      </>
     )
   }
 
   if (activity.length === 0) {
     return (
-      <div className="px-8 pt-16 pb-8 text-center">
-        <ClockCounterClockwise className="mx-auto mb-4 size-10 text-muted-foreground" weight="light" />
-        <p className="mb-2 text-base font-medium text-foreground">No activity yet</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Actions you and your space-mate take will show up here.
-        </p>
-      </div>
+      <>
+        <div className="px-8 pt-16 pb-8 text-center">
+          <ClockCounterClockwise className="mx-auto mb-4 size-10 text-muted-foreground" weight="light" />
+          <p className="mb-2 text-base font-medium text-foreground">No activity yet</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Actions you and your space-mate take will show up here.
+          </p>
+        </div>
+        <PageSwitcherBar />
+      </>
     )
   }
 
   return (
-    <div className="pt-2 pb-10">
-      {grouped.map(([dayKey, items]) => (
-        <div key={dayKey}>
-          <div className="px-5 pt-3 pb-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {formatDateLabel(dayKey)}
-            </span>
+    <>
+      <div className="pt-2 pb-24">
+        {grouped.map(([dayKey, items]) => (
+          <div key={dayKey}>
+            <div className="px-5 pt-3 pb-1.5">
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {formatDateLabel(dayKey)}
+              </span>
+            </div>
+            {items.map((a, i) => (
+              <FeedRow
+                key={a.id}
+                activity={a}
+                actorName={actorName(a.actor_id)}
+                currencyCode={currencyCode}
+                getCategoryIcon={getCategoryIcon}
+                isFirst={i === 0}
+                isLast={i === items.length - 1}
+              />
+            ))}
           </div>
-          {items.map((a, i) => (
-            <FeedRow
-              key={a.id}
-              activity={a}
-              actorName={actorName(a.actor_id)}
-              currencyCode={currencyCode}
-              getCategoryIcon={getCategoryIcon}
-              isFirst={i === 0}
-              isLast={i === items.length - 1}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      <PageSwitcherBar />
+    </>
   )
 }

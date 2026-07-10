@@ -18,6 +18,7 @@ import { PasswordSheet } from '../components/PasswordSheet'
 import { ChangeUsernameSheet } from '../components/ChangeUsernameSheet'
 import { MonthlyBudgetSheet } from '../components/MonthlyBudgetSheet'
 import { SwitchSpaceSheet } from '../components/SwitchSpaceSheet'
+import { PageSwitcherBar } from '../components/PageSwitcherBar'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -99,7 +100,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-5 px-6 pt-6 pb-24">
       <div className="overflow-hidden rounded-lg border border-border">
         {/* Account */}
         <div className="border-b border-border px-4 py-3.5 last:border-b-0">
@@ -310,6 +311,8 @@ export function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PageSwitcherBar />
     </div>
   )
 }

@@ -18,7 +18,6 @@ import { categoryColor } from '../lib/categoryColors'
 import { YOU_COLOR, PARTNER_COLOR } from '../lib/personColors'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { MonthlyBudgetSheet } from '../components/MonthlyBudgetSheet'
-import { FilterDrawer } from '../components/FilterDrawer'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
 import { AnimatedAmount } from '@/components/AnimatedAmount'
@@ -43,10 +42,9 @@ export function DashboardPage() {
   const members = useSpaceMembers(space?.space_id)
   const { recurringExpenses, refetch: refetchRecurring } = useRecurringExpenses(space?.space_id)
   const { budgets, refetch: refetchBudgets } = useBudgets(space?.space_id)
-  const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy, setFilters, activeFilterCount } = useExpenseFilters()
+  const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy } = useExpenseFilters()
 
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false)
 
   const now = useMemo(() => new Date(), [])
@@ -334,11 +332,6 @@ export function DashboardPage() {
       <BottomActionBar
         mode="stats"
         onAdd={() => setSheetOpen(true)}
-        activeFilterCount={activeFilterCount}
-        onOpenFilter={() => setFilterDrawerOpen(true)}
-        availableMonths={availableMonths}
-        selectedMonth={selectedMonth}
-        onSelectMonth={setSelectedMonth}
       />
 
       <AddExpenseSheet
@@ -348,17 +341,6 @@ export function DashboardPage() {
         categories={categories}
         members={members}
         recurringExpenses={recurringExpenses}
-      />
-
-      <FilterDrawer
-        isOpen={filterDrawerOpen}
-        onClose={() => setFilterDrawerOpen(false)}
-        categories={categories}
-        members={members}
-        currentUserId={user?.id}
-        selectedCategories={filterCategories}
-        selectedPayer={filterPaidBy}
-        onApply={setFilters}
       />
 
       <MonthlyBudgetSheet

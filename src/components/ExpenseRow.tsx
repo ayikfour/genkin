@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { PencilSimple, TrashSimple } from '@phosphor-icons/react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAppSound } from '../hooks/useAppSound'
+import { useLongPress } from '../hooks/useLongPress'
 import { formatCurrency } from '../lib/format'
 import type { Expense } from '../types'
 
@@ -18,6 +19,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   onEdit: () => void
   onDeleteRequest: () => void
+  onLongPress?: () => void
   showTopBorder?: boolean
   editMode?: boolean
   selected?: boolean
@@ -40,6 +42,7 @@ export function ExpenseRow({
   onOpenChange,
   onEdit,
   onDeleteRequest,
+  onLongPress,
   showTopBorder,
   editMode = false,
   selected = false,
@@ -49,6 +52,7 @@ export function ExpenseRow({
   const [dragX, setDragX] = useState(isOpen ? -SWIPE_WIDTH : 0)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef<DragState | null>(null)
+  const longPress = useLongPress({ onLongPress: () => onLongPress?.() })
 
   useEffect(() => {
     if (!dragRef.current) setDragX(isOpen ? -SWIPE_WIDTH : 0)
@@ -57,6 +61,9 @@ export function ExpenseRow({
   function handlePointerDown(e: React.PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     dragRef.current = { startX: e.clientX, startY: e.clientY, base: dragX, committed: false }
+    // Only arm long-press from the row's resting (fully closed) position —
+    // long-pressing an already-swiped-open row is ambiguous with dismissing it.
+    if (onLongPress && dragX === 0) longPress.start()
   }
 
   function handlePointerMove(e: React.PointerEvent) {
@@ -67,6 +74,7 @@ export function ExpenseRow({
 
     if (!drag.committed) {
       if (Math.abs(deltaX) < SWIPE_COMMIT_THRESHOLD && Math.abs(deltaY) < SWIPE_COMMIT_THRESHOLD) return
+      longPress.cancel()
       if (Math.abs(deltaY) > Math.abs(deltaX)) { dragRef.current = null; return }
       drag.committed = true
       setIsDragging(true)
@@ -84,6 +92,9 @@ export function ExpenseRow({
     const drag = dragRef.current
     dragRef.current = null
     setIsDragging(false)
+    longPress.cancel()
+
+    if (longPress.consumeFired()) return
 
     if (!drag?.committed) {
       if (isOpen) onOpenChange(false)

@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, SlidersHorizontal } from '@phosphor-icons/react'
+import { ArrowLeft } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useAppSound } from '@/hooks/useAppSound'
 import { Button } from '@/components/ui/button'
+import { TopNavMonthFilter } from '@/components/TopNavMonthFilter'
 
-const NAV_CONFIG: Record<string, { title: string; back?: string; hideGear?: boolean }> = {
-  '/log': { title: 'Logs' },
-  '/dashboard': { title: 'Stats', back: '/log' },
-  '/feed': { title: 'Feed', back: '/log' },
-  '/settings': { title: 'Settings', back: '/log', hideGear: true },
-  '/import': { title: 'Import expenses', back: '/settings', hideGear: true },
+const NAV_CONFIG: Record<string, { title: string; mode: 'plain' | 'monthFilter'; back?: string }> = {
+  '/log': { title: 'Logs', mode: 'monthFilter' },
+  '/dashboard': { title: 'Stats', mode: 'monthFilter' },
+  '/feed': { title: 'Activity', mode: 'plain' },
+  '/settings': { title: 'Settings', mode: 'plain' },
+  '/import': { title: 'Import expenses', mode: 'plain', back: '/settings' },
 }
 
 export function TopNav() {
@@ -40,25 +41,23 @@ export function TopNav() {
           scrolled ? 'opacity-100' : 'opacity-0'
         )}
       />
-      <div className="relative mx-auto flex max-w-lg items-center justify-between px-5 py-3.5">
-        <div className="flex items-center gap-2">
-          {config.back && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => { playSound('click'); navigate(config.back!) }}
-            >
-              <ArrowLeft />
-            </Button>
-          )}
+      <div className="relative mx-auto flex max-w-lg items-center px-5 py-3.5">
+        {config.back && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="mr-2"
+            onClick={() => { playSound('click'); navigate(config.back!) }}
+          >
+            <ArrowLeft />
+          </Button>
+        )}
+        {config.mode === 'monthFilter' ? (
+          <TopNavMonthFilter />
+        ) : (
           <h1 className="font-heading text-lg font-medium tracking-tight text-foreground">
             {config.title}
           </h1>
-        </div>
-        {!config.hideGear && (
-          <Button variant="ghost" size="icon-sm" onClick={() => { playSound('click'); navigate('/settings') }}>
-            <SlidersHorizontal />
-          </Button>
         )}
       </div>
     </nav>

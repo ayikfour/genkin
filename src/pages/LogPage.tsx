@@ -15,7 +15,6 @@ import { useAppSound } from '../hooks/useAppSound'
 import { computeBudgetSummary } from '../lib/budgetSummary'
 import { toISODateLocal } from '../lib/dates'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
-import { FilterDrawer } from '../components/FilterDrawer'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { UpcomingRecurring } from '../components/UpcomingRecurring'
@@ -76,8 +75,7 @@ export function LogPage() {
   const [safeTop, setSafeTop] = useState(0)
   const [activeDate, setActiveDate] = useState(todayKey)
 
-  const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy, setFilters, activeFilterCount } = useExpenseFilters()
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+  const { selectedMonth, setSelectedMonth, filterCategories, filterPaidBy, activeFilterCount } = useExpenseFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null)
@@ -257,6 +255,11 @@ export function LogPage() {
     setOpenSwipeRowId(null)
   }
 
+  function enterEditModeWithSelection(id: string) {
+    enterEditMode()
+    setSelectedIds([id])
+  }
+
   function exitEditMode() {
     playSound('tab-switch')
     setEditMode(false)
@@ -414,6 +417,7 @@ export function LogPage() {
                         onOpenChange={open => setOpenSwipeRowId(open ? expense.id : null)}
                         onEdit={() => openEdit(expense)}
                         onDeleteRequest={() => { setDeletingExpense(expense); setOpenSwipeRowId(null) }}
+                        onLongPress={() => enterEditModeWithSelection(expense.id)}
                         showTopBorder={i === 0}
                         editMode={editMode}
                         selected={selectedIds.includes(expense.id)}
@@ -432,13 +436,7 @@ export function LogPage() {
       <BottomActionBar
         mode="logs"
         onAdd={openAdd}
-        activeFilterCount={activeFilterCount}
-        onOpenFilter={() => { setFilterDrawerOpen(true); setOpenSwipeRowId(null) }}
-        availableMonths={availableMonths}
-        selectedMonth={selectedMonth}
-        onSelectMonth={m => { setSelectedMonth(m); setOpenSwipeRowId(null) }}
         editMode={editMode}
-        onEnterEditMode={enterEditMode}
         onExitEditMode={exitEditMode}
         selectedCount={selectedIds.length}
         onRequestBulkDelete={() => setBulkDeleteOpen(true)}
@@ -452,17 +450,6 @@ export function LogPage() {
         categories={categories}
         members={members}
         recurringExpenses={recurringExpenses}
-      />
-
-      <FilterDrawer
-        isOpen={filterDrawerOpen}
-        onClose={() => setFilterDrawerOpen(false)}
-        categories={categories}
-        members={members}
-        currentUserId={user?.id}
-        selectedCategories={filterCategories}
-        selectedPayer={filterPaidBy}
-        onApply={setFilters}
       />
 
       <Dialog open={!!deletingExpense} onOpenChange={open => !open && setDeletingExpense(null)}>
