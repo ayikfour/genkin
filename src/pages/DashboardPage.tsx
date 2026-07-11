@@ -15,9 +15,9 @@ import { formatCurrency } from '../lib/format'
 import { toISODateLocal } from '../lib/dates'
 import { DEFAULT_CURRENCY_CODE } from '../lib/currencies'
 import { categoryColor } from '../lib/categoryColors'
-import { YOU_COLOR, PARTNER_COLOR } from '../lib/personColors'
 import { AddExpenseSheet } from '../components/AddExpenseSheet'
 import { MonthlyBudgetSheet } from '../components/MonthlyBudgetSheet'
+import { SpendingHeatmap } from '../components/SpendingHeatmap'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
 import { AnimatedAmount } from '@/components/AnimatedAmount'
@@ -86,7 +86,7 @@ export function DashboardPage() {
     [filteredExpenses, budgets, members, user?.id, now, summaryMonth],
   )
   const {
-    monthlyTotal, momDelta, momPercent, daysInMonth, daysLeft, avgDailySpend, projectedTotal,
+    monthlyTotal, daysInMonth, daysLeft, avgDailySpend, projectedTotal,
     budgetTotal, remaining, dailyPace, budgetUsedPct, overBudget,
     partner, youTotal, partnerTotal, youBudget, partnerBudget,
   } = summary
@@ -121,9 +121,6 @@ export function DashboardPage() {
     return { dailySpend, categoryBreakdown }
   }, [monthFilteredExpenses, selectedMonth, daysInMonth])
 
-  const splitTotal = youTotal + partnerTotal
-  const youPct = splitTotal > 0 ? (youTotal / splitTotal) * 100 : 50
-
   function handleSaved(action: 'added' | 'updated' | 'deleted') {
     refetch()
     refetchRecurring()
@@ -136,25 +133,13 @@ export function DashboardPage() {
       <div className="flex flex-col pb-24">
         {/* This month + Budget */}
         <div className="border-b border-border px-5 py-5 last:border-b-0">
-          <div className="flex items-start justify-between pb-3">
-            <div>
-              <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">
-                {isCurrentMonth ? 'This month' : monthLabel}
-              </p>
-              <p className="font-heading text-3xl font-medium text-foreground">
-                <AnimatedAmount amount={monthlyTotal} currencyCode={currencyCode} />
-              </p>
-            </div>
-            {momPercent !== null && (
-              <span
-                className="mt-5 text-xs font-medium"
-                style={{
-                  color: momDelta > 0 ? 'var(--color-danger)' : momDelta < 0 ? 'var(--color-success)' : 'var(--muted-foreground)',
-                }}
-              >
-                {momDelta > 0 ? '↑' : momDelta < 0 ? '↓' : '–'} {Math.abs(momPercent).toFixed(0)}% vs last month
-              </span>
-            )}
+          <div className="pb-3">
+            <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">
+              {isCurrentMonth ? 'This month' : monthLabel}
+            </p>
+            <p className="font-heading text-3xl font-medium text-foreground">
+              <AnimatedAmount amount={monthlyTotal} currencyCode={currencyCode} />
+            </p>
           </div>
 
           <div className="pt-4 border-t border-border">
@@ -254,7 +239,7 @@ export function DashboardPage() {
         {/* Daily spend, selected month */}
         <div className="border-b border-border px-5 py-5 last:border-b-0">
           <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">
-            Avg. daily spend — {monthLabel}
+            Avg. daily spend
           </p>
           <p className="font-heading text-3xl font-medium text-foreground">
             <AnimatedAmount amount={avgDailySpend} currencyCode={currencyCode} />
@@ -278,7 +263,7 @@ export function DashboardPage() {
 
         {/* Category breakdown */}
         <div className="border-b border-border px-5 py-5 last:border-b-0">
-          <p className="text-sm font-medium text-foreground">By category — {monthLabel}</p>
+          <p className="mb-1.5 text-xs tracking-wide text-muted-foreground uppercase">By category</p>
           {categoryBreakdown.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No expenses logged {monthLabel === 'this month' ? 'this month' : 'that month'} yet.</p>
           ) : (
@@ -307,26 +292,15 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Who paid more */}
-        <div className="border-b border-border px-5 py-5 last:border-b-0">
-          <p className="text-sm font-medium text-foreground">Who paid — {monthLabel}</p>
-          {splitTotal === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">No expenses logged {monthLabel === 'this month' ? 'this month' : 'that month'} yet.</p>
-          ) : (
-            <div className="mt-3.5">
-              <div className="mb-2 flex justify-between text-xs">
-                <span className="font-medium text-foreground">You · {formatCurrency(youTotal, currencyCode)}</span>
-                {partner && (
-                  <span className="font-medium text-muted-foreground">{partner.display_name} · {formatCurrency(partnerTotal, currencyCode)}</span>
-                )}
-              </div>
-              <div className="flex h-1.5 bg-muted">
-                <div style={{ width: `${youPct}%`, background: YOU_COLOR }} />
-                <div style={{ width: `${100 - youPct}%`, background: PARTNER_COLOR }} />
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Spending activity heatmap */}
+        <SpendingHeatmap
+          expenses={expenses}
+          categories={categories}
+          members={members}
+          userId={user?.id}
+          currencyCode={currencyCode}
+          now={now}
+        />
       </div>
 
       <BottomActionBar
