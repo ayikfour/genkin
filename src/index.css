@@ -138,6 +138,50 @@ body {
   50% { opacity: 1; }
 }
 
+/* Border Beam Pulse — see design.md's "Border Beam Pulse" pattern. Signals
+   "tap to share" on a shareable Insight ticket. Two layers, animated
+   together: `.insight-beam-ring` is a 1.5px gradient ring (padding + dual
+   mask exclude trick — the same technique the reference site uses), and
+   `.insight-beam-glow` is a soft inset bloom bleeding the same colors
+   inward. Deliberately built from the app's existing Category Color
+   Palette (categoryColors.ts) rather than an arbitrary new rainbow — colorful
+   as requested, but sourced from hues already approved for this design
+   system instead of introducing brand-new ones. */
+@keyframes insight-beam-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes insight-beam-hue {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.insight-beam-ring {
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    #f0a868, #e0a8d8, #e8847c, #9b8cd9, #c9976b,
+    #6ba3d6, #d6c178, #7bc9a8, #8fd3c7, #a8b8c9, #f0a868
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: insight-beam-pulse 2.4s ease-in-out infinite, insight-beam-hue 8s linear infinite;
+}
+
+.insight-beam-glow {
+  box-shadow: inset 0 0 28px 2px rgba(155, 140, 217, 0.35);
+  animation: insight-beam-pulse 2.4s ease-in-out infinite, insight-beam-hue 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insight-beam-ring, .insight-beam-glow {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;

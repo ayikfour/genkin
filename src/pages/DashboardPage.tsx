@@ -75,6 +75,14 @@ export function DashboardPage() {
     return summaryMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   }, [selectedMonth, isCurrentMonth, summaryMonth])
 
+  // Always a concrete "JUL 2026"-style label, unlike monthLabel above (which
+  // says "this month" for the current month) — used on shared insight
+  // exports so the image is self-contained once it leaves the app.
+  const insightMonthLabel = useMemo(
+    () => summaryMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase(),
+    [summaryMonth],
+  )
+
   const filteredExpenses = useMemo(() => {
     let result = expenses
     if (filterCategories.length > 0) result = result.filter(e => filterCategories.includes(e.category))
@@ -257,6 +265,7 @@ export function DashboardPage() {
           userId={user?.id}
           currencyCode={currencyCode}
           daysElapsed={summary.dayOfMonth}
+          monthLabel={insightMonthLabel}
         />
 
         {/* Daily spend, selected month */}
