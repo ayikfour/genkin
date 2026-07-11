@@ -1,6 +1,5 @@
 import { CaretRight } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
-import { YOU_COLOR, PARTNER_COLOR } from '@/lib/personColors'
 import { AnimatedAmount } from './AnimatedAmount'
 import { BudgetProgressBar } from './BudgetProgressBar'
 
@@ -96,16 +95,22 @@ export function SummaryCard({
             )}
           >
             <div className={cn('overflow-hidden transition-opacity duration-300 ease-out', compact ? 'opacity-100' : 'opacity-0')}>
-              {/* Who-paid comparison, same continuous two-tone bar as Dashboard's
-                  "Who paid" card (YOU_COLOR/PARTNER_COLOR, no gap) — swaps in
-                  for the compact bar's collapsed pacing detail, scaled to the
-                  compact block height. */}
+              {/* Who-paid comparison, monochrome two-tone bar (foreground/
+                  muted-foreground, no gap) — swaps in for the compact bar's
+                  collapsed pacing detail, scaled to the compact block height.
+                  Widths transition on change since they can shift the moment
+                  this bar appears (compact toggle) or as the selected date's
+                  split changes, and should ease in step with the adjacent
+                  AnimatedAmount rolling-number transitions rather than
+                  snapping instantly. */}
               <div className="mt-1.5 flex h-1.5">
                 <div
-                  style={{ width: `${youAmount + partnerAmount > 0 ? (youAmount / (youAmount + partnerAmount)) * 100 : 50}%`, background: YOU_COLOR }}
+                  className="bg-foreground transition-[width] duration-300 ease-out"
+                  style={{ width: `${youAmount + partnerAmount > 0 ? (youAmount / (youAmount + partnerAmount)) * 100 : 50}%` }}
                 />
                 <div
-                  style={{ width: `${youAmount + partnerAmount > 0 ? (partnerAmount / (youAmount + partnerAmount)) * 100 : 50}%`, background: PARTNER_COLOR }}
+                  className="bg-muted-foreground/50 transition-[width] duration-300 ease-out"
+                  style={{ width: `${youAmount + partnerAmount > 0 ? (partnerAmount / (youAmount + partnerAmount)) * 100 : 50}%` }}
                 />
               </div>
             </div>
