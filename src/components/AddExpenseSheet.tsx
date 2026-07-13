@@ -81,7 +81,7 @@ export function AddExpenseSheet({ isOpen, onClose, onSaved, expense, categories,
       setAmountUnits('0')
       setCategory(categories[0]?.name ?? '')
       setDescription('')
-      setDate(new Date().toISOString().split('T')[0])
+      setDate(toISODateLocal(new Date()))
       setPaidBy(user?.id ?? '')
     }
     setIsRecurring(false)
